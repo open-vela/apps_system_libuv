@@ -24,6 +24,10 @@
 #define uv__queue_foreach(q, h)                                               \
   for ((q) = (h)->next; (q) != (h); (q) = (q)->next)
 
+#define uv__queue_foreach_safe(q, tmp, h)                                     \
+  for ((q) = (h)->next, (tmp) = (q)->next; (q) != (h);                \
+       (q) = (tmp), (q) != (h) ? ((tmp) = (q)->next) : ((tmp) = (q)))
+
 static inline void uv__queue_init(struct uv__queue* q) {
   q->next = q;
   q->prev = q;
@@ -39,6 +43,10 @@ static inline struct uv__queue* uv__queue_head(const struct uv__queue* q) {
 
 static inline struct uv__queue* uv__queue_next(const struct uv__queue* q) {
   return q->next;
+}
+
+static inline struct uv__queue* uv__queue_prev(const struct uv__queue* q) {
+  return q->prev;
 }
 
 static inline void uv__queue_add(struct uv__queue* h, struct uv__queue* n) {

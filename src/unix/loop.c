@@ -148,13 +148,15 @@ int uv_loop_fork(uv_loop_t* loop) {
 
   /* Rearm all the watchers that aren't re-queued by the above. */
   for (i = 0; i < loop->nwatchers; i++) {
-    w = loop->watchers[i];
-    if (w == NULL)
-      continue;
+    struct uv__queue* q;
 
-    if (w->pevents != 0 && uv__queue_empty(&w->watcher_queue)) {
-      w->events = 0; /* Force re-registration in uv__io_poll. */
-      uv__queue_insert_tail(&loop->watcher_queue, &w->watcher_queue);
+    uv__queue_foreach(q, &loop->watchers[i]) {
+      w = uv__queue_data(q, uv__io_t, io_queue);
+
+      if (w->pevents != 0 && uv__queue_empty(&w->watcher_queue)) {
+        w->events = 0; /* Force re-registration in uv__io_poll. */
+        uv__queue_insert_tail(&loop->watcher_queue, &w->watcher_queue);
+      }
     }
   }
 

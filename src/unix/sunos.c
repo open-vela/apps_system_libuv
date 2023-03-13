@@ -119,14 +119,14 @@ void uv__platform_invalidate_fd(uv_loop_t* loop, int fd) {
   assert(loop->watchers != NULL);
   assert(fd >= 0);
 
-  events = (struct port_event*) loop->watchers[loop->nwatchers];
-  nfds = (uintptr_t) loop->watchers[loop->nwatchers + 1];
+  events = (struct port_event*) uv__queue_next(&loop->watchers[loop->nwatchers]);
+  nfds = (uintptr_t) uv__queue_prev(&loop->watchers[loop->nwatchers]);
   if (events == NULL)
     return;
 
   /* Invalidate events with same file descriptor */
   for (i = 0; i < nfds; i++)
-    if ((int) events[i].portev_object == fd)
+    if ((int) events[i].portev_object == fd && uv__queue_empty(&loop->watchers[fd]))
       events[i].portev_object = -1;
 }
 
@@ -149,6 +149,7 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
   struct port_event* pe;
   struct timespec spec;
   struct uv__queue* q;
+  struct uv__queue* nq;
   uv__io_t* w;
   sigset_t* pset;
   sigset_t set;
@@ -171,6 +172,7 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
   }
 
   while (!uv__queue_empty(&loop->watcher_queue)) {
+    unsigned int ev;
     q = uv__queue_head(&loop->watcher_queue);
     uv__queue_remove(q);
     uv__queue_init(q);
@@ -178,10 +180,16 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
     w = uv__queue_data(q, uv__io_t, watcher_queue);
     assert(w->pevents != 0);
 
+    ev = w->pevents;
+    uv__queue_foreach(nq, &loop->watchers[w->fd]) {
+      uv__io_t* curr = uv__queue_data(nq, uv__io_t, io_queue);
+      ev |= curr->pevents;
+    }
+
     if (port_associate(loop->backend_fd,
                        PORT_SOURCE_FD,
                        w->fd,
-                       w->pevents,
+                       ev,
                        0)) {
       perror("(libuv) port_associate()");
       abort();
@@ -281,9 +289,10 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
     nevents = 0;
 
     assert(loop->watchers != NULL);
-    loop->watchers[loop->nwatchers] = (void*) events;
-    loop->watchers[loop->nwatchers + 1] = (void*) (uintptr_t) nfds;
+    uv__queue_next(&loop->watchers[loop->nwatchers]) = (void*) events;
+    uv__queue_prev(&loop->watchers[loop->nwatchers]) = (void*) (uintptr_t) nfds;
     for (i = 0; i < nfds; i++) {
+      struct uv__queue* head;
       pe = events + i;
       fd = pe->portev_object;
 
@@ -294,30 +303,38 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
       assert(fd >= 0);
       assert((unsigned) fd < loop->nwatchers);
 
-      w = loop->watchers[fd];
+      /* Save the head of the watchers list, because it may change during
+       * the execution of the cb function due to the realloc of the watchers
+       * list caused by adding a new fd.
+       */
+      head = &loop->watchers[fd];
 
       /* File descriptor that we've stopped watching, ignore. */
-      if (w == NULL)
+      if (uv__queue_empty(head))
         continue;
 
-      /* Run signal watchers last.  This also affects child process watchers
-       * because those are implemented in terms of signal watchers.
-       */
-      if (w == &loop->signal_io_watcher) {
-        have_signals = 1;
-      } else {
-        uv__metrics_update_idle_time(loop);
-        w->cb(loop, w, pe->portev_events);
+      uv__queue_foreach_safe(q, nq, head) {
+        w = uv__queue_data(q, uv__io_t, io_queue);
+
+        /* Run signal watchers last.  This also affects child process watchers
+         * because those are implemented in terms of signal watchers.
+         */
+        if (w == &loop->signal_io_watcher) {
+          have_signals = 1;
+        } else {
+          uv__metrics_update_idle_time(loop);
+          w->cb(loop, w, pe->portev_events);
+        }
+
+        nevents++;
+
+        if (w != uv__queue_data(q, uv__io_t, io_queue))
+          continue;  /* Disabled by callback. */
+
+        /* Events Ports operates in oneshot mode, rearm timer on next run. */
+        if (w->pevents != 0 && uv__queue_empty(&w->watcher_queue))
+          uv__queue_insert_tail(&loop->watcher_queue, &w->watcher_queue);
       }
-
-      nevents++;
-
-      if (w != loop->watchers[fd])
-        continue;  /* Disabled by callback. */
-
-      /* Events Ports operates in oneshot mode, rearm timer on next run. */
-      if (w->pevents != 0 && uv__queue_empty(&w->watcher_queue))
-        uv__queue_insert_tail(&loop->watcher_queue, &w->watcher_queue);
     }
 
     uv__metrics_inc_events(loop, nevents);
@@ -332,8 +349,8 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
       loop->signal_io_watcher.cb(loop, &loop->signal_io_watcher, POLLIN);
     }
 
-    loop->watchers[loop->nwatchers] = NULL;
-    loop->watchers[loop->nwatchers + 1] = NULL;
+    uv__queue_next(&loop->watchers[loop->nwatchers]) = NULL;
+    uv__queue_prev(&loop->watchers[loop->nwatchers]) = NULL;
 
     if (have_signals != 0)
       return;  /* Event loop should cycle now so don't poll again. */

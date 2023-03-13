@@ -95,6 +95,7 @@ struct uv__io_s {
   uv__io_cb cb;
   struct uv__queue pending_queue;
   struct uv__queue watcher_queue;
+  struct uv__queue io_queue;
   unsigned int pevents; /* Pending event mask i.e. mask at next tick. */
   unsigned int events;  /* Current event mask. */
   int fd;
@@ -223,7 +224,7 @@ typedef struct {
   int backend_fd;                                                             \
   struct uv__queue pending_queue;                                             \
   struct uv__queue watcher_queue;                                             \
-  uv__io_t** watchers;                                                        \
+  struct uv__queue* watchers;                                                 \
   unsigned int nwatchers;                                                     \
   unsigned int nfds;                                                          \
   struct uv__queue wq;                                                        \

@@ -69,19 +69,14 @@ TEST_IMPL(poll_multiple_handles) {
 
   ASSERT(0 == uv_poll_start(&first_poll_handle, UV_READABLE, poll_cb));
 
-  /* We may not start polling while another polling handle is active
+  /* We can start polling while another polling handle is active
    * on that fd.
    */
-#ifndef _WIN32
-  /* We do not track handles in an O(1) lookupable way on Windows,
-   * so not checking that here.
-   */
-  ASSERT(uv_poll_start(&second_poll_handle, UV_READABLE, poll_cb) == UV_EEXIST);
-#endif
+  ASSERT(0 == uv_poll_start(&second_poll_handle, UV_READABLE, poll_cb));
 
   /* After stopping the other polling handle, we now should be able to poll */
   ASSERT(0 == uv_poll_stop(&first_poll_handle));
-  ASSERT(0 == uv_poll_start(&second_poll_handle, UV_READABLE, poll_cb));
+  ASSERT(uv_poll_start(&second_poll_handle, UV_READABLE, poll_cb) == UV_EEXIST);
 
   /* Closing an already stopped polling handle is safe in any case */
   uv_close((uv_handle_t*) &first_poll_handle, close_cb);

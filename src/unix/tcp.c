@@ -267,7 +267,7 @@ out:
 int uv_tcp_open(uv_tcp_t* handle, uv_os_sock_t sock) {
   int err;
 
-  if (uv__fd_exists(handle->loop, sock))
+  if (uv__io_exists(handle->loop, &handle->io_watcher, sock))
     return UV_EEXIST;
 
   err = uv__nonblock(sock, 1);

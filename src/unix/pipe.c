@@ -220,7 +220,7 @@ int uv_pipe_open(uv_pipe_t* handle, uv_file fd) {
   int err;
   flags = 0;
 
-  if (uv__fd_exists(handle->loop, fd))
+  if (uv__io_exists(handle->loop, &handle->io_watcher, fd))
     return UV_EEXIST;
 
   do

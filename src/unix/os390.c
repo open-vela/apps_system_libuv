@@ -591,13 +591,32 @@ void uv__platform_invalidate_fd(uv_loop_t* loop, int fd) {
   assert(loop->watchers != NULL);
   assert(fd >= 0);
 
-  events = (struct epoll_event*) loop->watchers[loop->nwatchers];
-  nfds = (uintptr_t) loop->watchers[loop->nwatchers + 1];
+  events = (struct epoll_event*) uv__queue_next(&loop->watchers[loop->nwatchers]);
+  nfds = (uintptr_t) uv__queue_prev(&loop->watchers[loop->nwatchers]);
   if (events != NULL)
     /* Invalidate events with same file descriptor */
     for (i = 0; i < nfds; i++)
-      if ((int) events[i].fd == fd)
+      if ((int) events[i].fd == fd) {
+        struct uv__queue* q;
+
+        events[i].events = 0;
+        uv__queue_foreach(q, &loop->watchers[fd]) {
+          uv__io_t* curr = uv__queue_data(q, uv__io_t, io_queue);
+          events[i].events |= curr->pevents;
+        }
+
+        if (events[i].events) {
+          if (loop->backend_fd >= 0) {
+            dummy.events = events[i].events;
+            dummy.data.fd = fd;
+            epoll_ctl(loop->backend_fd, EPOLL_CTL_MOD, fd, &dummy);
+          }
+
+          return;
+        }
+
         events[i].fd = -1;
+      }
 
   /* Remove the file descriptor from the epoll. */
   if (loop->ep != NULL)
@@ -816,6 +835,7 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
   int have_signals;
   int real_timeout;
   struct uv__queue* q;
+  struct uv__queue* nq;
   uv__io_t* w;
   uint64_t base;
   int count;
@@ -849,6 +869,11 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
     assert(w->fd < (int) loop->nwatchers);
 
     e.events = w->pevents;
+    uv__queue_foreach(nq, &loop->watchers[w->fd]) {
+      uv__io_t* curr = uv__queue_data(nq, uv__io_t, io_queue);
+      e.events |= curr->pevents;
+    }
+
     e.fd = w->fd;
 
     if (w->events == 0)
@@ -956,9 +981,10 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
 
 
     assert(loop->watchers != NULL);
-    loop->watchers[loop->nwatchers] = (void*) events;
-    loop->watchers[loop->nwatchers + 1] = (void*) (uintptr_t) nfds;
+    uv__queue_next(&(loop->watchers[loop->nwatchers])) = (void*) events;
+    uv__queue_prev(&(loop->watchers[loop->nwatchers])) = (void*) (uintptr_t) nfds;
     for (i = 0; i < nfds; i++) {
+      struct uv__queue* head;
       pe = events + i;
       fd = pe->fd;
 
@@ -976,9 +1002,13 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
       assert(fd >= 0);
       assert((unsigned) fd < loop->nwatchers);
 
-      w = loop->watchers[fd];
+      /* Save the head of the watchers list, because it may change during
+       * the execution of the cb function due to the realloc of the watchers
+       * list caused by adding a new fd.
+       */
+      head = &loop->watchers[fd];
 
-      if (w == NULL) {
+      if (uv__queue_empty(head)) {
         /* File descriptor that we've stopped watching, disarm it.
          *
          * Ignore all errors because we may be racing with another thread
@@ -988,27 +1018,24 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
         continue;
       }
 
-      /* Give users only events they're interested in. Prevents spurious
-       * callbacks when previous callback invocation in this loop has stopped
-       * the current watcher. Also, filters out events that users has not
-       * requested us to watch.
-       */
-      pe->events &= w->pevents | POLLERR | POLLHUP;
-
-      if (pe->events == POLLERR || pe->events == POLLHUP)
-        pe->events |= w->pevents & (POLLIN | POLLOUT);
-
-      if (pe->events != 0) {
-        /* Run signal watchers last.  This also affects child process watchers
-         * because those are implemented in terms of signal watchers.
+      uv__queue_foreach_safe(q, nq, head) {
+        unsigned int e = pe->events;
+        w = uv__queue_data(q, uv__io_t, io_queue);
+        /* Give users only events they're interested in. Prevents spurious
+         * callbacks when previous callback invocation in this loop has stopped
+         * the current watcher. Also, filters out events that users has not
+         * requested us to watch.
          */
-        if (w == &loop->signal_io_watcher) {
-          have_signals = 1;
-        } else {
+        e &= w->pevents | POLLERR | POLLHUP;
+
+        if (e == POLLERR || e == POLLHUP)
+          e |= w->pevents & (POLLIN | POLLOUT);
+
+        if (e != 0) {
           uv__metrics_update_idle_time(loop);
-          w->cb(loop, w, pe->events);
+          w->cb(loop, w, e);
+          nevents++;
         }
-        nevents++;
       }
     }
 
@@ -1024,8 +1051,8 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
       loop->signal_io_watcher.cb(loop, &loop->signal_io_watcher, POLLIN);
     }
 
-    loop->watchers[loop->nwatchers] = NULL;
-    loop->watchers[loop->nwatchers + 1] = NULL;
+    uv__queue_next(&loop->watchers[loop->nwatchers]) = NULL;
+    uv__queue_prev(&loop->watchers[loop->nwatchers]) = NULL;
 
     if (have_signals != 0)
       return;  /* Event loop should cycle now so don't poll again. */

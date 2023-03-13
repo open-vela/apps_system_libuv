@@ -91,7 +91,18 @@ static void uv__pollfds_add(uv_loop_t* loop, uv__io_t* w) {
   assert(!loop->poll_fds_iterating);
   for (i = 0; i < loop->poll_fds_used; ++i) {
     if (loop->poll_fds[i].fd == w->fd) {
-      loop->poll_fds[i].events = w->pevents;
+      struct uv__queue* q;
+
+      if (uv__queue_empty(&loop->watchers[w->fd])) {
+        loop->poll_fds[i].events = w->pevents;
+      } else {
+        loop->poll_fds[i].events = 0;
+        uv__queue_foreach(q, &loop->watchers[w->fd]) {
+          uv__io_t* curr = uv__queue_data(q, uv__io_t, io_queue);
+          loop->poll_fds[i].events |= curr->pevents;
+        }
+      }
+
       return;
     }
   }
@@ -103,12 +114,34 @@ static void uv__pollfds_add(uv_loop_t* loop, uv__io_t* w) {
   pe->events = w->pevents;
 }
 
+/* Update fd events from our poll fds array.  */
+static void uv__pollfds_update(uv_loop_t* loop, int fd, int index) {
+  struct uv__queue* q;
+
+  /* Loop over the entire watchers array to update events. */
+  loop->poll_fds[index].events = 0;
+  loop->poll_fds[index].revents = 0;
+  uv__queue_foreach(q, &loop->watchers[fd]) {
+    uv__io_t* curr = uv__queue_data(q, uv__io_t, io_queue);
+    loop->poll_fds[index].events |= curr->pevents;
+  }
+}
+
 /* Remove a watcher's fd from our poll fds array.  */
 static void uv__pollfds_del(uv_loop_t* loop, int fd) {
   size_t i;
   assert(!loop->poll_fds_iterating);
   for (i = 0; i < loop->poll_fds_used;) {
     if (loop->poll_fds[i].fd == fd) {
+      /* If the loop's watchers corresponding to fd is not empty,
+       * Update the event according to them.
+       */
+      if (-1 != fd && !uv__queue_empty(&loop->watchers[fd]))
+        {
+          uv__pollfds_update(loop, fd, i);
+          return;
+        }
+
       /* swap to last position and remove */
       --loop->poll_fds_used;
       uv__pollfds_swap(loop, i, loop->poll_fds_used);
@@ -271,6 +304,10 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
 
     /* Loop over the entire poll fds array looking for returned events.  */
     for (i = 0; i < loop->poll_fds_used; i++) {
+      struct uv__queue* head;
+      struct uv__queue* tmp;
+      struct uv__queue* q;
+
       pe = loop->poll_fds + i;
       fd = pe->fd;
 
@@ -281,29 +318,36 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
       assert(fd >= 0);
       assert((unsigned) fd < loop->nwatchers);
 
-      w = loop->watchers[fd];
+      /* Save the head of the watchers list, because it may change during
+       * the execution of the cb function due to the realloc of the watchers
+       * list caused by adding a new fd.
+       */
+      head = &loop->watchers[fd];
 
-      if (w == NULL) {
+      if (uv__queue_empty(head)) {
         /* File descriptor that we've stopped watching, ignore.  */
         uv__platform_invalidate_fd(loop, fd);
         continue;
       }
 
-      /* Filter out events that user has not requested us to watch
-       * (e.g. POLLNVAL).
-       */
-      pe->revents &= w->pevents | POLLERR | POLLHUP;
+      /* Traverse the watchers list corresponding to fd. */
+      uv__queue_foreach_safe(q, tmp, head) {
+        w = uv__queue_data(q, uv__io_t, io_queue);
+        /* Filter out events that user has not requested us to watch
+         * (e.g. POLLNVAL).
+         */
 
-      if (pe->revents != 0) {
-        /* Run signal watchers last.  */
-        if (w == &loop->signal_io_watcher) {
-          have_signals = 1;
-        } else {
-          uv__metrics_update_idle_time(loop);
-          w->cb(loop, w, pe->revents);
+        if ((pe->revents & (w->pevents | POLLERR | POLLHUP)) != 0) {
+          /* Run signal watchers last.  */
+          if (w == &loop->signal_io_watcher) {
+            have_signals = 1;
+          } else {
+            uv__metrics_update_idle_time(loop);
+            w->cb(loop, w, pe->revents & (w->pevents | POLLERR | POLLHUP));
+          }
+
+          nevents++;
         }
-
-        nevents++;
       }
     }
 
@@ -356,12 +400,17 @@ void uv__platform_invalidate_fd(uv_loop_t* loop, int fd) {
   assert(fd >= 0);
 
   if (loop->poll_fds_iterating) {
-    /* uv__io_poll is currently iterating.  Just invalidate fd.  */
+    /* uv__io_poll is currently iterating. */
     for (i = 0; i < loop->poll_fds_used; i++)
       if (loop->poll_fds[i].fd == fd) {
-        loop->poll_fds[i].fd = -1;
-        loop->poll_fds[i].events = 0;
-        loop->poll_fds[i].revents = 0;
+        /* Just invalidate fd if watchers queue is NULL. */
+        if (uv__queue_empty(&loop->watchers[fd])) {
+          loop->poll_fds[i].fd = -1;
+          loop->poll_fds[i].events = 0;
+          loop->poll_fds[i].revents = 0;
+        } else {
+          uv__pollfds_update(loop, fd, i);
+        }
       }
   } else {
     /* uv__io_poll is not iterating.  Delete fd from the set.  */

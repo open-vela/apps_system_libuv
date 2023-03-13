@@ -68,7 +68,7 @@ static void uv__poll_io(uv_loop_t* loop, uv__io_t* w, unsigned int events) {
 int uv_poll_init(uv_loop_t* loop, uv_poll_t* handle, int fd) {
   int err;
 
-  if (uv__fd_exists(loop, fd))
+  if (uv__io_exists(loop, &handle->io_watcher, fd))
     return UV_EEXIST;
 
   err = uv__io_check_fd(loop, fd);
@@ -117,20 +117,11 @@ int uv_poll_stop(uv_poll_t* handle) {
 
 
 int uv_poll_start(uv_poll_t* handle, int pevents, uv_poll_cb poll_cb) {
-  uv__io_t** watchers;
-  uv__io_t* w;
   int events;
 
   assert((pevents & ~(UV_READABLE | UV_WRITABLE | UV_DISCONNECT |
                       UV_PRIORITIZED)) == 0);
   assert(!uv__is_closing(handle));
-
-  watchers = handle->loop->watchers;
-  w = &handle->io_watcher;
-
-  if (uv__fd_exists(handle->loop, w->fd))
-    if (watchers[w->fd] != w)
-      return UV_EEXIST;
 
   uv__poll_stop(handle);
 

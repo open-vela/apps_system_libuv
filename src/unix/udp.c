@@ -54,7 +54,8 @@ void uv__udp_close(uv_udp_t* handle) {
   uv__handle_stop(handle);
 
   if (handle->io_watcher.fd != -1) {
-    uv__close(handle->io_watcher.fd);
+    if (uv__queue_empty(&handle->loop->watchers[handle->io_watcher.fd]))
+      uv__close(handle->io_watcher.fd);
     handle->io_watcher.fd = -1;
   }
 }
@@ -1034,7 +1035,7 @@ int uv_udp_open(uv_udp_t* handle, uv_os_sock_t sock) {
   if (handle->io_watcher.fd != -1)
     return UV_EBUSY;
 
-  if (uv__fd_exists(handle->loop, sock))
+  if (uv__io_exists(handle->loop, &handle->io_watcher, sock))
     return UV_EEXIST;
 
   err = uv__nonblock(sock, 1);

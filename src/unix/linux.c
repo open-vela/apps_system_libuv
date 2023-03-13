@@ -664,8 +664,27 @@ void uv__platform_invalidate_fd(uv_loop_t* loop, int fd) {
   /* Invalidate events with same file descriptor */
   if (inv != NULL)
     for (i = 0; i < inv->nfds; i++)
-      if (inv->events[i].data.fd == fd)
+      if (inv->events[i].data.fd == fd) {
+        struct uv__queue* q;
+
+        inv->events[i].events = 0;
+        uv__queue_foreach(q, &loop->watchers[fd]) {
+          uv__io_t* curr = uv__queue_data(q, uv__io_t, io_queue);
+          inv->events[i].events |= curr->pevents;
+        }
+
+        if (inv->events[i].events) {
+          if (loop->backend_fd >= 0) {
+            dummy.events = inv->events[i].events;
+            dummy.data.fd = fd;
+            epoll_ctl(loop->backend_fd, EPOLL_CTL_MOD, fd, &dummy);
+          }
+
+          return;
+        }
+
         inv->events[i].data.fd = -1;
+      }
 
   /* Remove the file descriptor from the epoll.
    * This avoids a problem where the same file description remains open
@@ -1283,6 +1302,7 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
   struct uv__iou* iou;
   int real_timeout;
   struct uv__queue* q;
+  struct uv__queue* nq;
   uv__io_t* w;
   sigset_t* sigmask;
   sigset_t sigset;
@@ -1340,6 +1360,11 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
 
     w->events = w->pevents;
     e.events = w->pevents;
+    uv__queue_foreach(nq, &loop->watchers[w->fd]) {
+      uv__io_t* curr = uv__queue_data(nq, uv__io_t, io_queue);
+      e.events |= curr->pevents;
+    }
+
     e.data.fd = w->fd;
 
     uv__epoll_ctl_prep(epollfd, ctl, &prep, op, w->fd, &e);
@@ -1428,6 +1453,10 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
     lfields->inv = &inv;
 
     for (i = 0; i < nfds; i++) {
+      struct uv__queue* head;
+      struct uv__queue* tmp;
+      struct uv__queue* q;
+
       pe = events + i;
       fd = pe->data.fd;
 
@@ -1444,9 +1473,12 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
       assert(fd >= 0);
       assert((unsigned) fd < loop->nwatchers);
 
-      w = loop->watchers[fd];
-
-      if (w == NULL) {
+      /* Save the head of the watchers list, because it may change during
+       * the execution of the cb function due to the realloc of the watchers
+       * list caused by adding a new fd.
+       */
+      head = &loop->watchers[fd];
+      if (uv__queue_empty(head)) {
         /* File descriptor that we've stopped watching, disarm it.
          *
          * Ignore all errors because we may be racing with another thread
@@ -1456,44 +1488,53 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
         continue;
       }
 
-      /* Give users only events they're interested in. Prevents spurious
-       * callbacks when previous callback invocation in this loop has stopped
-       * the current watcher. Also, filters out events that users has not
-       * requested us to watch.
-       */
-      pe->events &= w->pevents | POLLERR | POLLHUP;
+      /* Traverse the watchers list corresponding to fd. */
+      uv__queue_foreach_safe(q, tmp, head) {
+        unsigned int e;
 
-      /* Work around an epoll quirk where it sometimes reports just the
-       * EPOLLERR or EPOLLHUP event.  In order to force the event loop to
-       * move forward, we merge in the read/write events that the watcher
-       * is interested in; uv__read() and uv__write() will then deal with
-       * the error or hangup in the usual fashion.
-       *
-       * Note to self: happens when epoll reports EPOLLIN|EPOLLHUP, the user
-       * reads the available data, calls uv_read_stop(), then sometime later
-       * calls uv_read_start() again.  By then, libuv has forgotten about the
-       * hangup and the kernel won't report EPOLLIN again because there's
-       * nothing left to read.  If anything, libuv is to blame here.  The
-       * current hack is just a quick bandaid; to properly fix it, libuv
-       * needs to remember the error/hangup event.  We should get that for
-       * free when we switch over to edge-triggered I/O.
-       */
-      if (pe->events == POLLERR || pe->events == POLLHUP)
-        pe->events |=
+        e = pe->events;
+        w = uv__queue_data(q, uv__io_t, io_queue);
+        /* Give users only events they're interested in. Prevents spurious
+         * callbacks when previous callback invocation in this loop has stopped
+         * the current watcher. Also, filters out events that users has not
+         * requested us to watch.
+         */
+
+        e &= w->pevents | POLLERR | POLLHUP;
+
+        /* Work around an epoll quirk where it sometimes reports just the
+         * EPOLLERR or EPOLLHUP event.  In order to force the event loop to
+         * move forward, we merge in the read/write events that the watcher
+         * is interested in; uv__read() and uv__write() will then deal with
+         * the error or hangup in the usual fashion.
+         *
+         * Note to self: happens when epoll reports EPOLLIN|EPOLLHUP, the user
+         * reads the available data, calls uv_read_stop(), then sometime later
+         * calls uv_read_start() again.  By then, libuv has forgotten about the
+         * hangup and the kernel won't report EPOLLIN again because there's
+         * nothing left to read.  If anything, libuv is to blame here.  The
+         * current hack is just a quick bandaid; to properly fix it, libuv
+         * needs to remember the error/hangup event.  We should get that for
+         * free when we switch over to edge-triggered I/O.
+         */
+
+        if (e == POLLERR || e == POLLHUP)
+          e |=
           w->pevents & (POLLIN | POLLOUT | UV__POLLRDHUP | UV__POLLPRI);
 
-      if (pe->events != 0) {
-        /* Run signal watchers last.  This also affects child process watchers
-         * because those are implemented in terms of signal watchers.
-         */
-        if (w == &loop->signal_io_watcher) {
-          have_signals = 1;
-        } else {
-          uv__metrics_update_idle_time(loop);
-          w->cb(loop, w, pe->events);
-        }
+        if (e != 0) {
+          /* Run signal watchers last.  This also affects child process watchers
+           * because those are implemented in terms of signal watchers.
+           */
+          if (w == &loop->signal_io_watcher) {
+            have_signals = 1;
+          } else {
+            uv__metrics_update_idle_time(loop);
+            w->cb(loop, w, e);
+          }
 
-        nevents++;
+          nevents++;
+        }
       }
     }
 

@@ -857,9 +857,8 @@ static unsigned int next_power_of_two(unsigned int val) {
 }
 
 static void maybe_resize(uv_loop_t* loop, unsigned int len) {
-  uv__io_t** watchers;
-  void* fake_watcher_list;
-  void* fake_watcher_count;
+  struct uv__queue* watchers;
+  struct uv__queue fake_watcher;
   unsigned int nwatchers;
   unsigned int i;
 
@@ -868,24 +867,29 @@ static void maybe_resize(uv_loop_t* loop, unsigned int len) {
 
   /* Preserve fake watcher list and count at the end of the watchers */
   if (loop->watchers != NULL) {
-    fake_watcher_list = loop->watchers[loop->nwatchers];
-    fake_watcher_count = loop->watchers[loop->nwatchers + 1];
+    fake_watcher.next = uv__queue_next(&loop->watchers[loop->nwatchers]);
+    fake_watcher.prev = uv__queue_prev(&loop->watchers[loop->nwatchers]);
   } else {
-    fake_watcher_list = NULL;
-    fake_watcher_count = NULL;
+    fake_watcher.next = NULL;
+    fake_watcher.prev = NULL;
   }
 
-  nwatchers = next_power_of_two(len + 2) - 2;
-  watchers = uv__reallocf(loop->watchers,
-                          (nwatchers + 2) * sizeof(loop->watchers[0]));
-
+  nwatchers = next_power_of_two(len + 1) - 1;
+  watchers = uv__malloc((nwatchers + 1) * sizeof(loop->watchers[0]));
   if (watchers == NULL)
     abort();
-  for (i = loop->nwatchers; i < nwatchers; i++)
-    watchers[i] = NULL;
-  watchers[nwatchers] = fake_watcher_list;
-  watchers[nwatchers + 1] = fake_watcher_count;
 
+  for (i = 0; i < nwatchers; i++) {
+    uv__queue_init(&watchers[i]);
+    if (i < loop->nwatchers) {
+      uv__queue_move(&loop->watchers[i], &watchers[i]);
+    }
+  }
+
+  watchers[nwatchers].next = uv__queue_next(&fake_watcher);
+  watchers[nwatchers].prev = uv__queue_prev(&fake_watcher);
+
+  uv__free(loop->watchers);
   loop->watchers = watchers;
   loop->nwatchers = nwatchers;
 }
@@ -896,6 +900,7 @@ void uv__io_init(uv__io_t* w, uv__io_cb cb, int fd) {
   assert(fd >= -1);
   uv__queue_init(&w->pending_queue);
   uv__queue_init(&w->watcher_queue);
+  uv__queue_init(&w->io_queue);
   w->cb = cb;
   w->fd = fd;
   w->events = 0;
@@ -904,6 +909,7 @@ void uv__io_init(uv__io_t* w, uv__io_cb cb, int fd) {
 
 
 void uv__io_start(uv_loop_t* loop, uv__io_t* w, unsigned int events) {
+  struct uv__queue* q;
   assert(0 == (events & ~(POLLIN | POLLOUT | UV__POLLRDHUP | UV__POLLPRI)));
   assert(0 != events);
   assert(w->fd >= 0);
@@ -924,10 +930,13 @@ void uv__io_start(uv_loop_t* loop, uv__io_t* w, unsigned int events) {
   if (uv__queue_empty(&w->watcher_queue))
     uv__queue_insert_tail(&loop->watcher_queue, &w->watcher_queue);
 
-  if (loop->watchers[w->fd] == NULL) {
-    loop->watchers[w->fd] = w;
-    loop->nfds++;
+  uv__queue_foreach(q, &loop->watchers[w->fd]) {
+    if (w == uv__queue_data(q, uv__io_t, io_queue))
+      return;
   }
+
+  uv__queue_insert_tail(&loop->watchers[w->fd], &w->io_queue);
+  loop->nfds++;
 }
 
 
@@ -947,14 +956,20 @@ void uv__io_stop(uv_loop_t* loop, uv__io_t* w, unsigned int events) {
   w->pevents &= ~events;
 
   if (w->pevents == 0) {
+    struct uv__queue* q;
+    struct uv__queue* tmp;
+
     uv__queue_remove(&w->watcher_queue);
     uv__queue_init(&w->watcher_queue);
     w->events = 0;
 
-    if (w == loop->watchers[w->fd]) {
-      assert(loop->nfds > 0);
-      loop->watchers[w->fd] = NULL;
-      loop->nfds--;
+    uv__queue_foreach_safe(q, tmp, &loop->watchers[w->fd]) {
+      uv__io_t* curr = uv__queue_data(q, uv__io_t, io_queue);
+      if (curr == w) {
+        uv__queue_remove(q);
+        assert(loop->nfds > 0);
+        loop->nfds--;
+      }
     }
   }
   else if (uv__queue_empty(&w->watcher_queue))
@@ -985,8 +1000,16 @@ int uv__io_active(const uv__io_t* w, unsigned int events) {
 }
 
 
-int uv__fd_exists(uv_loop_t* loop, int fd) {
-  return (unsigned) fd < loop->nwatchers && loop->watchers[fd] != NULL;
+int uv__io_exists(uv_loop_t* loop, const uv__io_t* w, int fd) {
+  if ((unsigned)fd < loop->nwatchers) {
+    struct uv__queue* q;
+
+    uv__queue_foreach(q, &loop->watchers[fd])
+      if (uv__queue_data(q, uv__io_t, io_queue) == w)
+        return 1;
+  }
+
+  return 0;
 }
 
 

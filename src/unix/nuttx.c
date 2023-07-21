@@ -37,7 +37,14 @@
 #include <nuttx/tls.h>
 
 int uv_exepath(char* buffer, size_t* size) {
-  return UV_ENOTSUP;
+  int ret;
+  ret = pthread_getname_np(getpid(), buffer, *size);
+  if (ret == 0)
+    {
+      *size = strlen(buffer);
+    }
+
+  return UV__ERR(ret);
 }
 
 char** uv_setup_args(int argc, char** argv) {
@@ -48,11 +55,11 @@ void uv__process_title_cleanup(void) {
 }
 
 int uv_set_process_title(const char* title) {
-  return UV__ERR(pthread_setname_np(pthread_self(), title));
+  return UV__ERR(pthread_setname_np(getpid(), title));
 }
 
 int uv_get_process_title(char* buffer, size_t size) {
-  return UV__ERR(pthread_getname_np(pthread_self(), buffer, size));
+  return UV__ERR(pthread_getname_np(getpid(), buffer, size));
 }
 
 uint64_t uv_get_constrained_memory(void) {

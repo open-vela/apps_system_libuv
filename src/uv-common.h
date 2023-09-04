@@ -318,6 +318,13 @@ void uv__threadpool_cleanup(void);
 # define uv__handle_platform_init(h) ((h)->next_closing = NULL)
 #endif
 
+#if UV_HANDLE_BACKTRACE > 0
+#define uv__handle_backtrace_init(h)                                           \
+  uv__get_backtrace((h)->backtrace, UV_HANDLE_BACKTRACE)
+#else
+#define uv__handle_backtrace_init(h)
+#endif
+
 #define uv__handle_init(loop_, h, type_)                                      \
   do {                                                                        \
     (h)->loop = (loop_);                                                      \
@@ -325,6 +332,7 @@ void uv__threadpool_cleanup(void);
     (h)->flags = UV_HANDLE_REF;  /* Ref the loop when active. */              \
     uv__queue_insert_tail(&(loop_)->handle_queue, &(h)->handle_queue);        \
     uv__handle_platform_init(h);                                              \
+    uv__handle_backtrace_init(h);                                             \
   }                                                                           \
   while (0)
 
@@ -395,6 +403,8 @@ struct uv__loop_metrics_s {
 
 void uv__metrics_update_idle_time(uv_loop_t* loop);
 void uv__metrics_set_provider_entry_time(uv_loop_t* loop);
+/* Get current backtrace */
+int uv__get_backtrace(void** frames, int frames_size);
 
 #if defined(__linux__) || defined(__NuttX__)
 struct uv__iou {

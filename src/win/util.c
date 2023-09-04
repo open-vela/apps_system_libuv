@@ -41,6 +41,7 @@
 /* clang-format on */
 #include <userenv.h>
 #include <math.h>
+#include <ntifs.h>
 
 /*
  * Max title length; the only thing MSDN tells us about the maximum length
@@ -1864,4 +1865,14 @@ int uv__random_rtlgenrandom(void* buf, size_t buflen) {
 
 void uv_sleep(unsigned int msec) {
   Sleep(msec);
+}
+
+int uv__get_backtrace(void** frames, int frames_size) {
+  int ret = 0;
+#if UV_HANDLE_BACKTRACE > 0
+  ret = RtlCaptureStackBackTrace( 0, frames_size, frames, NULL);
+  if (ret < frames_size)
+    frames[ret] = NULL;
+#endif
+  return ret;
 }

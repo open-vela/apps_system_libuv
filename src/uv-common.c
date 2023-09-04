@@ -574,12 +574,18 @@ static void uv__print_handles(uv_loop_t* loop, int only_active, FILE* stream) {
     }
 
     fprintf(stream,
-            "[%c%c%c] %-8s %p\n",
+            "[%c%c%c] %-8s %p",
             "R-"[!(h->flags & UV_HANDLE_REF)],
             "A-"[!(h->flags & UV_HANDLE_ACTIVE)],
             "I-"[!(h->flags & UV_HANDLE_INTERNAL)],
             type,
             (void*)h);
+#if UV_HANDLE_BACKTRACE > 0
+    fprintf(stream, " backtrace:");
+    for (int i = 0; i < UV_HANDLE_BACKTRACE && h->backtrace[i]; i++)
+      fprintf(stream, " %p", h->backtrace[i]);
+#endif
+    fprintf(stream, "\n");
   }
 }
 

@@ -56,6 +56,11 @@ static void timer_cb(uv_timer_t* handle) {
 
 TEST_IMPL(close_order) {
   uv_loop_t* loop;
+
+  check_cb_called = 0;
+  timer_cb_called = 0;
+  close_cb_called = 0;
+
   loop = uv_default_loop();
 
   uv_check_init(loop, &check_handle);

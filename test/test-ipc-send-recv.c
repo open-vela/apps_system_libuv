@@ -317,7 +317,7 @@ static void read_cb(uv_stream_t* handle,
   ASSERT_GE(nread, 0);
 
   pipe = (uv_pipe_t*) handle;
-  ASSERT_EQ(pipe, &ctx2.channel);
+  ASSERT_EQ((uintptr_t)pipe, (uintptr_t)&ctx2.channel);
 
   while (uv_pipe_pending_count(pipe) > 0) {
     if (++read_cb_count == 2) {

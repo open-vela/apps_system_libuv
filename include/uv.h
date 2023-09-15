@@ -842,6 +842,16 @@ UV_EXTERN int uv_pipe_connect2(uv_connect_t* req,
                                size_t namelen,
                                unsigned int flags,
                                uv_connect_cb cb);
+#ifdef CONFIG_NET_RPMSG
+UV_EXTERN int uv_pipe_rpmsg_bind(uv_pipe_t* handle,
+                                 const char* name,
+                                 const char* cpu_name);
+UV_EXTERN void uv_pipe_rpmsg_connect(uv_connect_t* req,
+                                     uv_pipe_t* handle,
+                                     const char* name,
+                                     const char* cpu_name,
+                                     uv_connect_cb cb);
+#endif
 UV_EXTERN int uv_pipe_getsockname(const uv_pipe_t* handle,
                                   char* buffer,
                                   size_t* size);
@@ -1826,12 +1836,14 @@ UV_EXTERN int uv_thread_create(uv_thread_t* tid, uv_thread_cb entry, void* arg);
 
 typedef enum {
   UV_THREAD_NO_FLAGS = 0x00,
-  UV_THREAD_HAS_STACK_SIZE = 0x01
+  UV_THREAD_HAS_STACK_SIZE = 0x01,
+  UV_THREAD_HAS_PRIORITY = 0x02
 } uv_thread_create_flags;
 
 struct uv_thread_options_s {
   unsigned int flags;
   size_t stack_size;
+  int priority;
   /* More fields may be added at any time. */
 };
 

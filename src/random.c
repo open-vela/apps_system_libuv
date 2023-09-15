@@ -31,7 +31,7 @@
 static int uv__random(void* buf, size_t buflen) {
   int rc;
 
-#if defined(__PASE__)
+#if defined(__PASE__) || defined(__NuttX__)
   rc = uv__random_readpath("/dev/urandom", buf, buflen);
 #elif defined(_AIX) || defined(__QNX__)
   rc = uv__random_readpath("/dev/random", buf, buflen);

@@ -79,6 +79,7 @@ int uv__tcsetattr(int fd, int how, const struct termios *term) {
   return 0;
 }
 
+#ifndef __NuttX__
 static int uv__tty_is_slave(const int fd) {
   int result;
 #if defined(__linux__) || defined(__FreeBSD__)
@@ -132,15 +133,13 @@ static int uv__tty_is_slave(const int fd) {
 #endif
   return result;
 }
+#endif
 
 int uv_tty_init(uv_loop_t* loop, uv_tty_t* tty, int fd, int unused) {
   uv_handle_type type;
   int flags;
-  int newfd;
-  int r;
   int saved_flags;
   int mode;
-  char path[256];
   (void)unused; /* deprecated parameter is no longer needed */
 
   /* File descriptors that refer to files cannot be monitored with epoll.
@@ -152,7 +151,6 @@ int uv_tty_init(uv_loop_t* loop, uv_tty_t* tty, int fd, int unused) {
     return UV_EINVAL;
 
   flags = 0;
-  newfd = -1;
 
   /* Save the fd flags in case we need to restore them due to an error. */
   do
@@ -163,6 +161,7 @@ int uv_tty_init(uv_loop_t* loop, uv_tty_t* tty, int fd, int unused) {
     return UV__ERR(errno);
   mode = saved_flags & O_ACCMODE;
 
+#ifndef __NuttX__
   /* Reopen the file descriptor when it refers to a tty. This lets us put the
    * tty in non-blocking mode without affecting other processes that share it
    * with us.
@@ -174,6 +173,10 @@ int uv_tty_init(uv_loop_t* loop, uv_tty_t* tty, int fd, int unused) {
    * other processes.
    */
   if (type == UV_TTY) {
+    int newfd;
+    int r;
+    char path[256];
+
     /* Reopening a pty in master mode won't work either because the reopened
      * pty will be in slave mode (*BSD) or reopening will allocate a new
      * master/slave pair (Linux). Therefore check if the fd points to a
@@ -207,6 +210,7 @@ int uv_tty_init(uv_loop_t* loop, uv_tty_t* tty, int fd, int unused) {
   }
 
 skip:
+#endif
   uv__stream_init(loop, (uv_stream_t*) tty, UV_TTY);
 
   /* If anything fails beyond this point we need to remove the handle from

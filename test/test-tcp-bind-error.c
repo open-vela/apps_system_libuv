@@ -28,6 +28,10 @@
 static int connect_cb_called = 0;
 static int close_cb_called = 0;
 
+static inline void init_called_count(void) {
+  connect_cb_called = 0;
+  close_cb_called = 0;
+}
 
 static void close_cb(uv_handle_t* handle) {
   ASSERT_NOT_NULL(handle);
@@ -47,6 +51,8 @@ TEST_IMPL(tcp_bind_error_addrinuse_connect) {
   int addrlen;
   uv_connect_t req;
   uv_tcp_t conn;
+
+  init_called_count();
 
   /* 127.0.0.1:<TEST_PORT> is already taken by tcp4_echo_server running in
    * another process. uv_tcp_bind() and uv_tcp_connect() should still succeed
@@ -82,6 +88,8 @@ TEST_IMPL(tcp_bind_error_addrinuse_listen) {
   uv_tcp_t server1, server2;
   int r;
 
+  init_called_count();
+
   ASSERT(0 == uv_ip4_addr("0.0.0.0", TEST_PORT, &addr));
   r = uv_tcp_init(uv_default_loop(), &server1);
   ASSERT(r == 0);
@@ -115,6 +123,8 @@ TEST_IMPL(tcp_bind_error_addrnotavail_1) {
   uv_tcp_t server;
   int r;
 
+  init_called_count();
+
   ASSERT(0 == uv_ip4_addr("127.255.255.255", TEST_PORT, &addr));
 
   r = uv_tcp_init(uv_default_loop(), &server);
@@ -139,6 +149,8 @@ TEST_IMPL(tcp_bind_error_addrnotavail_2) {
   struct sockaddr_in addr;
   uv_tcp_t server;
   int r;
+
+  init_called_count();
 
   ASSERT(0 == uv_ip4_addr("4.4.4.4", TEST_PORT, &addr));
 
@@ -165,6 +177,9 @@ TEST_IMPL(tcp_bind_error_fault) {
   uv_tcp_t server;
   int r;
 
+  init_called_count();
+
+
   garbage_addr = (struct sockaddr_in*) &garbage;
 
   r = uv_tcp_init(uv_default_loop(), &server);
@@ -189,6 +204,8 @@ TEST_IMPL(tcp_bind_error_inval) {
   struct sockaddr_in addr2;
   uv_tcp_t server;
   int r;
+
+  init_called_count();
 
   ASSERT(0 == uv_ip4_addr("0.0.0.0", TEST_PORT, &addr1));
   ASSERT(0 == uv_ip4_addr("0.0.0.0", TEST_PORT_2, &addr2));
@@ -266,6 +283,8 @@ TEST_IMPL(tcp_bind_writable_flags) {
   uv_write_t write_req;
   uv_shutdown_t shutdown_req;
   int r;
+
+  init_called_count();
 
   ASSERT(0 == uv_ip4_addr("0.0.0.0", TEST_PORT, &addr));
   r = uv_tcp_init(uv_default_loop(), &server);

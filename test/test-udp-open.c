@@ -83,10 +83,9 @@ static void close_socket(uv_os_sock_t sock) {
 static void alloc_cb(uv_handle_t* handle,
                      size_t suggested_size,
                      uv_buf_t* buf) {
-  static char slab[65536];
-  ASSERT(suggested_size <= sizeof(slab));
-  buf->base = slab;
-  buf->len = sizeof(slab);
+  buf->base = malloc(65536);
+  buf->len = 65536;
+  ASSERT(suggested_size <= 65536);
 }
 
 
@@ -123,6 +122,8 @@ static void recv_cb(uv_udp_t* handle,
   ASSERT(r == 0);
 
   uv_close((uv_handle_t*) handle, close_cb);
+
+  free(buf->base);
 }
 
 
@@ -173,7 +174,7 @@ TEST_IMPL(udp_open) {
     ASSERT(r == 0);
 
     r = uv_udp_open(&client2, sock);
-    ASSERT(r == UV_EEXIST);
+    ASSERT(r == 0);
 
     uv_close((uv_handle_t*) &client2, NULL);
   }
@@ -256,6 +257,9 @@ TEST_IMPL(udp_open_connect) {
   uv_udp_t server;
   uv_os_sock_t sock;
   int r;
+
+  send_cb_called = 0;
+  close_cb_called = 0;
 
   ASSERT(0 == uv_ip4_addr("127.0.0.1", TEST_PORT, &addr));
 

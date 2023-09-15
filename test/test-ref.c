@@ -244,6 +244,7 @@ TEST_IMPL(tcp_ref2) {
 
 
 TEST_IMPL(tcp_ref2b) {
+  close_cb_called = 0;
   uv_tcp_t h;
   uv_tcp_init(uv_default_loop(), &h);
   uv_listen((uv_stream_t*)&h, 128, (uv_connection_cb)fail_cb);

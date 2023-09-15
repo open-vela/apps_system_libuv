@@ -68,9 +68,8 @@ static void connection_cb(uv_stream_t* server, int status) {
 static void alloc_cb(uv_handle_t* handle,
                      size_t suggested_size,
                      uv_buf_t* buf) {
-  static char slab[1024];
-  buf->base = slab;
-  buf->len = sizeof(slab);
+  buf->base = malloc(1024);
+  buf->len = 1024;
 }
 
 
@@ -84,6 +83,8 @@ static void read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   }
 
   read_cb_called++;
+
+  free(buf->base);
 }
 
 

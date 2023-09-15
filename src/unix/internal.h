@@ -215,6 +215,7 @@ struct uv__statx {
     defined(__FreeBSD__) || \
     defined(__linux__) || \
     defined(__OpenBSD__) || \
+    defined(__NuttX__) || \
     defined(__NetBSD__)
 #define uv__nonblock uv__nonblock_ioctl
 #define UV__NONBLOCK_IS_IOCTL 1

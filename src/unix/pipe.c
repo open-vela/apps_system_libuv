@@ -28,7 +28,9 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <stdlib.h>
-
+#ifdef CONFIG_NET_RPMSG
+#include <netpacket/rpmsg.h>
+#endif // CONFIG_NET_RPMSG
 
 int uv_pipe_init(uv_loop_t* loop, uv_pipe_t* handle, int ipc) {
   uv__stream_init(loop, (uv_stream_t*)handle, UV_NAMED_PIPE);
@@ -126,6 +128,48 @@ err_socket:
   return err;
 }
 
+#ifdef CONFIG_NET_RPMSG
+int uv_pipe_rpmsg_bind(uv_pipe_t* handle,
+                       const char* name,
+                       const char* cpu_name) {
+  struct sockaddr_rpmsg saddr;
+  int sockfd;
+  int err;
+
+  /* Already bound? */
+  if (uv__stream_fd(handle) >= 0)
+    return UV_EINVAL;
+
+  err = uv__socket(AF_RPMSG, SOCK_STREAM, 0);
+  if (err < 0)
+    goto err_socket;
+  sockfd = err;
+
+  memset(&saddr, 0, sizeof saddr);
+  uv__strscpy(saddr.rp_name, name, sizeof(saddr.rp_name));
+  uv__strscpy(saddr.rp_cpu, cpu_name, sizeof(saddr.rp_cpu));
+  saddr.rp_family = AF_RPMSG;
+
+  if (bind(sockfd, (struct sockaddr*)&saddr, sizeof saddr)) {
+    err = UV__ERR(errno);
+    /* Convert ENOENT to EACCES for compatibility with Windows. */
+    if (err == UV_ENOENT)
+      err = UV_EACCES;
+
+    uv__close(sockfd);
+    goto err_socket;
+  }
+
+  /* Success. */
+  handle->flags |= UV_HANDLE_BOUND;
+  handle->pipe_fname = NULL;
+  handle->io_watcher.fd = sockfd;
+  return 0;
+
+err_socket:
+  return err;
+}
+#endif
 
 int uv__pipe_listen(uv_pipe_t* handle, int backlog, uv_connection_cb cb) {
   if (uv__stream_fd(handle) == -1)
@@ -305,6 +349,89 @@ out:
 
   return 0;
 }
+
+
+#ifdef CONFIG_NET_RPMSG
+static inline int uv__connect(uv_connect_t* req,
+                               uv_pipe_t* handle,
+                               struct sockaddr* saddr,
+                               socklen_t addrlen,
+                               int new_sock,
+                               uv_connect_cb cb)
+{
+  int err;
+  int r;
+  do {
+    r = connect(uv__stream_fd(handle), saddr, addrlen);
+  }
+  while (r == -1 && errno == EINTR);
+  if (r == -1 && errno != EINPROGRESS) {
+    err = UV__ERR(errno);
+#if defined(__CYGWIN__) || defined(__MSYS__)
+    /* EBADF is supposed to mean that the socket fd is bad, but
+       Cygwin reports EBADF instead of ENOTSOCK when the file is
+       not a socket.  We do not expect to see a bad fd here
+       (e.g. due to new_sock), so translate the error.  */
+    if (err == UV_EBADF)
+      err = UV_ENOTSOCK;
+#endif
+    goto out;
+  }
+  err = 0;
+  if (new_sock) {
+    err = uv__stream_open((uv_stream_t*)handle,
+                          uv__stream_fd(handle),
+                          UV_HANDLE_READABLE | UV_HANDLE_WRITABLE);
+  }
+  if (err == 0)
+    uv__io_start(handle->loop, &handle->io_watcher, POLLOUT);
+out:
+  return err;
+}
+
+
+static inline void uv__connect_handle_err(uv_connect_t* req,
+                                          uv_pipe_t* handle,
+                                          int err,
+                                          uv_connect_cb cb)
+{
+  handle->delayed_error = err;
+  handle->connect_req = req;
+  uv__req_init(handle->loop, req, UV_CONNECT);
+  req->handle = (uv_stream_t*)handle;
+  req->cb = cb;
+  uv__queue_init(&req->queue);
+  /* Force callback to run on next tick in case of error. */
+  if (err)
+    uv__io_feed(handle->loop, &handle->io_watcher);
+}
+
+
+void uv_pipe_rpmsg_connect(uv_connect_t* req,
+                           uv_pipe_t* handle,
+                           const char* name,
+                           const char* cpu_name,
+                           uv_connect_cb cb) {
+  struct sockaddr_rpmsg saddr;
+  int new_sock;
+  int err;
+  new_sock = (uv__stream_fd(handle) == -1);
+  if (new_sock) {
+    err = uv__socket(AF_RPMSG, SOCK_STREAM, 0);
+    if (err < 0)
+      goto out;
+    handle->io_watcher.fd = err;
+  }
+  memset(&saddr, 0, sizeof saddr);
+  uv__strscpy(saddr.rp_name, name, sizeof(saddr.rp_name));
+  uv__strscpy(saddr.rp_cpu, cpu_name, sizeof(saddr.rp_cpu));
+  saddr.rp_family = AF_RPMSG;
+  err = uv__connect(req, handle, (struct sockaddr*)&saddr, sizeof saddr,
+                    new_sock, cb);
+out:
+    uv__connect_handle_err(req, handle, err, cb);
+}
+#endif // CONFIG_NET_RPMSG
 
 
 static int uv__pipe_getsockpeername(const uv_pipe_t* handle,

@@ -72,6 +72,11 @@ static void check_cb(uv_check_t* handle) {
 TEST_IMPL(idle_starvation) {
   int r;
 
+  idle_cb_called = 0;
+  check_cb_called = 0;
+  timer_cb_called = 0;
+  close_cb_called = 0;
+
   r = uv_idle_init(uv_default_loop(), &idle_handle);
   ASSERT(r == 0);
   r = uv_idle_start(&idle_handle, idle_cb);

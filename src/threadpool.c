@@ -20,6 +20,7 @@
  */
 
 #include "uv-common.h"
+#include "uv-global.h"
 
 #if !defined(_WIN32)
 # include "unix/internal.h"
@@ -29,18 +30,6 @@
 
 #define MAX_THREADPOOL_SIZE 1024
 
-static uv_once_t once = UV_ONCE_INIT;
-static uv_cond_t cond;
-static uv_mutex_t mutex;
-static unsigned int idle_threads;
-static unsigned int slow_io_work_running;
-static unsigned int nthreads;
-static uv_thread_t* threads;
-static uv_thread_t default_threads[4];
-static struct uv__queue exit_message;
-static struct uv__queue wq;
-static struct uv__queue run_slow_work_message;
-static struct uv__queue slow_io_pending_wq;
 
 static unsigned int slow_work_thread_threshold(void) {
   return (nthreads + 1) / 2;
@@ -68,16 +57,16 @@ static void worker(void* arg) {
 
     /* Keep waiting while either no work is present or only slow I/O
        and we're at the threshold for that. */
-    while (uv__queue_empty(&wq) ||
-           (uv__queue_head(&wq) == &run_slow_work_message &&
-            uv__queue_next(&run_slow_work_message) == &wq &&
+    while (uv__queue_empty(&lwq) ||
+           (uv__queue_head(&lwq) == &run_slow_work_message &&
+            uv__queue_next(&run_slow_work_message) == &lwq &&
             slow_io_work_running >= slow_work_thread_threshold())) {
       idle_threads += 1;
       uv_cond_wait(&cond, &mutex);
       idle_threads -= 1;
     }
 
-    q = uv__queue_head(&wq);
+    q = uv__queue_head(&lwq);
     if (q == &exit_message) {
       uv_cond_signal(&cond);
       uv_mutex_unlock(&mutex);
@@ -92,7 +81,7 @@ static void worker(void* arg) {
       /* If we're at the slow I/O threshold, re-schedule until after all
          other work in the queue is done. */
       if (slow_io_work_running >= slow_work_thread_threshold()) {
-        uv__queue_insert_tail(&wq, q);
+        uv__queue_insert_tail(&lwq, q);
         continue;
       }
 
@@ -110,7 +99,7 @@ static void worker(void* arg) {
 
       /* If there is more slow I/O work, schedule it to be run as well. */
       if (!uv__queue_empty(&slow_io_pending_wq)) {
-        uv__queue_insert_tail(&wq, &run_slow_work_message);
+        uv__queue_insert_tail(&lwq, &run_slow_work_message);
         if (idle_threads > 0)
           uv_cond_signal(&cond);
       }
@@ -153,7 +142,7 @@ static void post(struct uv__queue* q, enum uv__work_kind kind) {
     q = &run_slow_work_message;
   }
 
-  uv__queue_insert_tail(&wq, q);
+  uv__queue_insert_tail(&lwq, q);
   if (idle_threads > 0)
     uv_cond_signal(&cond);
   uv_mutex_unlock(&mutex);
@@ -191,10 +180,27 @@ void uv__threadpool_cleanup(void) {
 
 
 static void init_threads(void) {
-  uv_thread_options_t config;
   unsigned int i;
   const char* val;
   uv_sem_t sem;
+
+  const uv_thread_options_t params = {
+#ifdef DEF_THREADPOOL_STACKSIZE
+    UV_THREAD_HAS_STACK_SIZE |
+#endif
+#ifdef DEF_THREADPOOL_PRIORITY
+    UV_THREAD_HAS_PRIORITY |
+#endif
+    UV_THREAD_NO_FLAGS,
+#ifdef DEF_THREADPOOL_STACKSIZE
+    DEF_THREADPOOL_STACKSIZE,
+#else
+    0,
+#endif
+#ifdef DEF_THREADPOOL_PRIORITY
+    DEF_THREADPOOL_PRIORITY
+#endif
+  };
 
   nthreads = ARRAY_SIZE(default_threads);
   val = getenv("UV_THREADPOOL_SIZE");
@@ -220,18 +226,15 @@ static void init_threads(void) {
   if (uv_mutex_init(&mutex))
     abort();
 
-  uv__queue_init(&wq);
+  uv__queue_init(&lwq);
   uv__queue_init(&slow_io_pending_wq);
   uv__queue_init(&run_slow_work_message);
 
   if (uv_sem_init(&sem, 0))
     abort();
 
-  config.flags = UV_THREAD_HAS_STACK_SIZE;
-  config.stack_size = 8u << 20;  /* 8 MB */
-
   for (i = 0; i < nthreads; i++)
-    if (uv_thread_create_ex(threads + i, &config, worker, &sem))
+    if (uv_thread_create_ex(threads + i, &params, worker, &sem))
       abort();
 
   for (i = 0; i < nthreads; i++)

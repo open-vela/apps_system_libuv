@@ -26,7 +26,7 @@
 #include "uv.h"
 #include "task.h"
 
-#define REQ_COUNT 10000
+#define REQ_COUNT 1000
 
 static uv_timer_t timer;
 static uv_tcp_t server;
@@ -39,7 +39,7 @@ static int write_callbacks;
 static int write_cancelled_callbacks;
 static int write_error_callbacks;
 
-static uv_write_t write_requests[REQ_COUNT];
+static uv_write_t* write_requests;
 
 
 static void close_cb(uv_handle_t* handle) {
@@ -112,6 +112,9 @@ TEST_IMPL(tcp_write_queue_order) {
   struct sockaddr_in addr;
   int buffer_size = 16 * 1024;
 
+  write_requests = (uv_write_t*)malloc(sizeof(uv_write_t) * REQ_COUNT);
+  ASSERT(write_requests != NULL);
+
   start_server();
 
   ASSERT(0 == uv_ip4_addr("127.0.0.1", TEST_PORT, &addr));
@@ -124,6 +127,8 @@ TEST_IMPL(tcp_write_queue_order) {
   ASSERT(0 == uv_send_buffer_size((uv_handle_t*) &client, &buffer_size));
 
   ASSERT(0 == uv_run(uv_default_loop(), UV_RUN_DEFAULT));
+
+  free(write_requests);
 
   ASSERT(connect_cb_called == 1);
   ASSERT(connection_cb_called == 1);

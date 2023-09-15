@@ -282,6 +282,21 @@ TEST_IMPL(loop_handles) {
   int i;
   int r;
 
+  loop_iteration = 0;
+  prepare_1_cb_called = 0;
+  prepare_1_close_cb_called = 0;
+  prepare_2_cb_called = 0;
+  prepare_2_close_cb_called = 0;
+  check_cb_called = 0;
+  check_close_cb_called = 0;
+  idle_1_cb_called = 0;
+  idle_1_close_cb_called = 0;
+  idles_1_active = 0;
+  idle_2_cb_called = 0;
+  idle_2_close_cb_called = 0;
+  idle_2_cb_started = 0;
+  idle_2_is_active = 0;
+
   r = uv_prepare_init(uv_default_loop(), &prepare_1_handle);
   ASSERT(r == 0);
   r = uv_prepare_start(&prepare_1_handle, prepare_1_cb);

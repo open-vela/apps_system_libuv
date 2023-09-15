@@ -53,6 +53,9 @@ TEST_IMPL(random_async) {
   uv_random_t req;
   uv_loop_t* loop;
 
+  random_cb_called = 0;
+  memset(scratch, 0, sizeof(scratch));
+
   loop = uv_default_loop();
   ASSERT(UV_EINVAL == uv_random(loop, &req, scratch, sizeof(scratch), -1,
                                 random_cb));
@@ -78,6 +81,9 @@ TEST_IMPL(random_async) {
 TEST_IMPL(random_sync) {
   char zero[256];
   char buf[256];
+
+  random_cb_called = 0;
+  memset(scratch, 0, sizeof(scratch));
 
   ASSERT(UV_EINVAL == uv_random(NULL, NULL, buf, sizeof(buf), -1, NULL));
   ASSERT(UV_E2BIG == uv_random(NULL, NULL, buf, -1, -1, NULL));

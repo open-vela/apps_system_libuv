@@ -26,14 +26,15 @@
 #include <errno.h>
 
 /* NOTE: Number should be big enough to trigger this problem */
-#if defined(__CYGWIN__) || defined(__MSYS__) || defined(__PASE__)
+#if defined(__CYGWIN__) || defined(__MSYS__) || defined(__PASE__) || defined(__NuttX__)
 /* Cygwin crashes or hangs in socket() with too many AF_INET sockets.  */
 /* IBMi PASE timeout with too many AF_INET sockets.  */
-static uv_udp_t sockets[1250];
+#  define SOCKET_NUM 125
 #else
-static uv_udp_t sockets[2500];
+#  define SOCKET_NUM 2500
 #endif
-static uv_udp_send_t reqs[ARRAY_SIZE(sockets)];
+static uv_udp_t* sockets;
+static uv_udp_send_t* reqs;
 static char slab[1];
 static unsigned int recv_cb_called;
 static unsigned int send_cb_called;
@@ -74,13 +75,19 @@ TEST_IMPL(watcher_cross_stop) {
   uv_buf_t buf;
   char big_string[1024];
 
-  TEST_FILE_LIMIT(ARRAY_SIZE(sockets) + 32);
+  TEST_FILE_LIMIT(SOCKET_NUM + 32);
+
+  sockets = (uv_udp_t*)malloc(sizeof(uv_udp_t) * SOCKET_NUM);
+  ASSERT(sockets != NULL);
+
+  reqs = (uv_udp_send_t*)malloc(sizeof(uv_udp_send_t) * SOCKET_NUM);
+  ASSERT(reqs != NULL);
 
   ASSERT(0 == uv_ip4_addr("127.0.0.1", TEST_PORT, &addr));
   memset(big_string, 'A', sizeof(big_string));
   buf = uv_buf_init(big_string, sizeof(big_string));
 
-  for (i = 0; i < ARRAY_SIZE(sockets); i++) {
+  for (i = 0; i < SOCKET_NUM; i++) {
     ASSERT(0 == uv_udp_init(loop, &sockets[i]));
     ASSERT(0 == uv_udp_bind(&sockets[i],
                             (const struct sockaddr*) &addr,
@@ -97,15 +104,18 @@ TEST_IMPL(watcher_cross_stop) {
   while (recv_cb_called == 0)
     uv_run(loop, UV_RUN_ONCE);
 
-  for (i = 0; i < ARRAY_SIZE(sockets); i++)
+  for (i = 0; i < SOCKET_NUM; i++)
     uv_close((uv_handle_t*) &sockets[i], close_cb);
 
   ASSERT(recv_cb_called > 0);
 
   uv_run(loop, UV_RUN_DEFAULT);
 
-  ASSERT(ARRAY_SIZE(sockets) == send_cb_called);
-  ASSERT(ARRAY_SIZE(sockets) == close_cb_called);
+  free(sockets);
+  free(reqs);
+
+  ASSERT(SOCKET_NUM == send_cb_called);
+  ASSERT(SOCKET_NUM == close_cb_called);
 
   MAKE_VALGRIND_HAPPY(loop);
   return 0;

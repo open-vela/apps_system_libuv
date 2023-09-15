@@ -102,6 +102,9 @@ static const unsigned first_handle_number_fs_event = 0;
 #define INIT_AND_START(name, loop)                                            \
   do {                                                                        \
     size_t i;                                                                 \
+    name##_cb_calls[0] = 0;                                                   \
+    name##_cb_calls[1] = 0;                                                   \
+    name##_cb_calls[2] = 0;                                                   \
     for (i = 0; i < ARRAY_SIZE(name); i++) {                                  \
       int r;                                                                  \
       r = uv_##name##_init((loop), &(name)[i]);                               \

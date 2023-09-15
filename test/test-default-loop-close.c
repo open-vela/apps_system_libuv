@@ -36,6 +36,8 @@ TEST_IMPL(default_loop_close) {
   uv_loop_t* loop;
   uv_timer_t timer_handle;
 
+  timer_cb_called = 0;
+
   loop = uv_default_loop();
   ASSERT_NOT_NULL(loop);
 

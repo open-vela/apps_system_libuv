@@ -35,6 +35,11 @@
 static int close_cb_called = 0;
 static int connect_cb_called = 0;
 
+static void init_globals(void)
+{
+  close_cb_called = 0;
+  connect_cb_called = 0;
+}
 
 static void close_cb(uv_handle_t* handle) {
   ASSERT_NOT_NULL(handle);
@@ -63,6 +68,7 @@ TEST_IMPL(pipe_connect_bad_name) {
   uv_connect_t req;
   int r;
 
+  init_globals();
   r = uv_pipe_init(uv_default_loop(), &client, 0);
   ASSERT_EQ(r, 0);
   uv_pipe_connect(&req, &client, BAD_PIPENAME, connect_cb);
@@ -83,6 +89,7 @@ TEST_IMPL(pipe_connect_to_file) {
   uv_connect_t req;
   int r;
 
+  init_globals();
   r = uv_pipe_init(uv_default_loop(), &client, 0);
   ASSERT_EQ(r, 0);
   uv_pipe_connect(&req, &client, path, connect_cb_file);

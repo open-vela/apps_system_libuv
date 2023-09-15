@@ -36,6 +36,13 @@ static int timer_close_cb_calls;
 static int timer_cb_calls;
 
 
+static inline void init_call_count(void) {
+  connect_cb_calls = 0;
+  close_cb_calls = 0;
+  timer_close_cb_calls = 0;
+  timer_cb_calls = 0;
+}
+
 static void on_close(uv_handle_t* handle) {
   close_cb_calls++;
 }
@@ -88,6 +95,9 @@ static void on_connect_without_close(uv_connect_t *req, int status) {
 static void connection_fail(uv_connect_cb connect_cb) {
   struct sockaddr_in client_addr, server_addr;
   int r;
+
+  /* Initialize the call counter. */
+  init_call_count();
 
   ASSERT(0 == uv_ip4_addr("0.0.0.0", 0, &client_addr));
 

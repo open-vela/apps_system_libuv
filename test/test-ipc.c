@@ -295,7 +295,7 @@ void spawn_helper(uv_pipe_t* channel,
   r = uv_exepath(exepath, &exepath_size);
   ASSERT_EQ(r, 0);
 
-  exepath[exepath_size] = '\0';
+  exepath[exepath_size - 1] = '\0';
   args[0] = exepath;
   args[1] = (char*)helper;
   args[2] = NULL;

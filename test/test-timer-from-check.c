@@ -62,6 +62,11 @@ static void check_cb(uv_check_t* handle) {
 
 
 TEST_IMPL(timer_from_check) {
+
+  prepare_cb_called = 0;
+  check_cb_called = 0;
+  timer_cb_called = 0;
+
   ASSERT(0 == uv_prepare_init(uv_default_loop(), &prepare_handle));
   ASSERT(0 == uv_check_init(uv_default_loop(), &check_handle));
   ASSERT(0 == uv_check_start(&check_handle, check_cb));

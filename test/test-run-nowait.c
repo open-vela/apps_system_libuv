@@ -34,6 +34,9 @@ static void timer_cb(uv_timer_t* handle) {
 
 TEST_IMPL(run_nowait) {
   int r;
+
+  timer_called = 0;
+
   uv_timer_init(uv_default_loop(), &timer_handle);
   uv_timer_start(&timer_handle, timer_cb, 100, 100);
 

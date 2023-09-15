@@ -56,10 +56,10 @@ static void do_write(uv_stream_t* stream, uv_write_cb cb) {
 static void on_alloc(uv_handle_t* handle,
                      size_t suggested_size,
                      uv_buf_t* buf) {
-  static char slab[65536];
-  buf->base = slab;
-  buf->len = sizeof(slab);
+  buf->base = malloc(65536);
+  buf->len = 65536;
 }
+
 
 static void on_read1(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   ASSERT(nread >= 0);
@@ -74,6 +74,8 @@ static void on_read1(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   ASSERT(0 == uv_read_start(stream, on_alloc, on_read2));
 
   read_cb_called++;
+
+  free(buf->base);
 }
 
 static void on_read2(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
@@ -83,6 +85,8 @@ static void on_read2(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   uv_close((uv_handle_t*)&server, NULL);
 
   read_cb_called++;
+
+  free(buf->base);
 }
 
 static void on_connection(uv_stream_t* server, int status) {

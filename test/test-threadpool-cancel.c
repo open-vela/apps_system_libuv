@@ -49,6 +49,13 @@ static unsigned timer_cb_called;
 static uv_work_t pause_reqs[4];
 static uv_sem_t pause_sems[ARRAY_SIZE(pause_reqs)];
 
+static void init_globals(void)
+{
+  fs_cb_called = 0;
+  done_cb_called = 0;
+  done2_cb_called = 0;
+  timer_cb_called = 0;
+}
 
 static void work_cb(uv_work_t* req) {
   uv_sem_wait(pause_sems + (req - pause_reqs));
@@ -199,6 +206,8 @@ TEST_IMPL(threadpool_cancel_getaddrinfo) {
   uv_loop_t* loop;
   int r;
 
+  init_globals();
+
   INIT_CANCEL_INFO(&ci, reqs);
   loop = uv_default_loop();
   saturate_threadpool();
@@ -231,6 +240,8 @@ TEST_IMPL(threadpool_cancel_getnameinfo) {
   struct cancel_info ci;
   uv_loop_t* loop;
   int r;
+
+  init_globals();
 
   r = uv_ip4_addr("127.0.0.1", 80, &addr4);
   ASSERT(r == 0);
@@ -265,6 +276,8 @@ TEST_IMPL(threadpool_cancel_random) {
   struct random_info req;
   uv_loop_t* loop;
 
+  init_globals();
+
   saturate_threadpool();
   loop = uv_default_loop();
   ASSERT(0 == uv_random(loop,
@@ -290,6 +303,8 @@ TEST_IMPL(threadpool_cancel_work) {
   uv_loop_t* loop;
   unsigned i;
 
+  init_globals();
+
   INIT_CANCEL_INFO(&ci, reqs);
   loop = uv_default_loop();
   saturate_threadpool();
@@ -314,6 +329,8 @@ TEST_IMPL(threadpool_cancel_fs) {
   uv_loop_t* loop;
   unsigned n;
   uv_buf_t iov;
+
+  init_globals();
 
   INIT_CANCEL_INFO(&ci, reqs);
   loop = uv_default_loop();
@@ -365,6 +382,8 @@ TEST_IMPL(threadpool_cancel_fs) {
 TEST_IMPL(threadpool_cancel_single) {
   uv_loop_t* loop;
   uv_work_t req;
+
+  init_globals();
 
   saturate_threadpool();
   loop = uv_default_loop();

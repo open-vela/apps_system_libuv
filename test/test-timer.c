@@ -35,6 +35,17 @@ static uint64_t start_time;
 static uv_timer_t tiny_timer;
 static uv_timer_t huge_timer1;
 static uv_timer_t huge_timer2;
+static int ncalls = 0;
+
+void init_globals(void)
+{
+  once_cb_called = 0;
+  once_close_cb_called = 0;
+  repeat_cb_called = 0;
+  repeat_close_cb_called = 0;
+  order_cb_called = 0;
+  ncalls = 0;
+}
 
 
 static void once_close_cb(uv_handle_t* handle) {
@@ -118,6 +129,8 @@ TEST_IMPL(timer) {
   unsigned int i;
   int r;
 
+  init_globals();
+
   start_time = uv_now(uv_default_loop());
   ASSERT(0 < start_time);
 
@@ -164,6 +177,8 @@ TEST_IMPL(timer_start_twice) {
   uv_timer_t once;
   int r;
 
+  init_globals();
+
   r = uv_timer_init(uv_default_loop(), &once);
   ASSERT(r == 0);
   r = uv_timer_start(&once, never_cb, 86400 * 1000, 0);
@@ -182,6 +197,8 @@ TEST_IMPL(timer_start_twice) {
 
 TEST_IMPL(timer_init) {
   uv_timer_t handle;
+
+  init_globals();
 
   ASSERT(0 == uv_timer_init(uv_default_loop(), &handle));
   ASSERT(0 == uv_timer_get_repeat(&handle));
@@ -208,6 +225,8 @@ TEST_IMPL(timer_order) {
   int second;
   uv_timer_t handle_a;
   uv_timer_t handle_b;
+
+  init_globals();
 
   first = 0;
   second = 1;
@@ -251,6 +270,9 @@ static void tiny_timer_cb(uv_timer_t* handle) {
 
 
 TEST_IMPL(timer_huge_timeout) {
+
+  init_globals();
+
   ASSERT(0 == uv_timer_init(uv_default_loop(), &tiny_timer));
   ASSERT(0 == uv_timer_init(uv_default_loop(), &huge_timer1));
   ASSERT(0 == uv_timer_init(uv_default_loop(), &huge_timer2));
@@ -267,7 +289,6 @@ TEST_IMPL(timer_huge_timeout) {
 
 
 static void huge_repeat_cb(uv_timer_t* handle) {
-  static int ncalls;
 
   if (ncalls == 0)
     ASSERT(handle == &huge_timer1);
@@ -282,6 +303,9 @@ static void huge_repeat_cb(uv_timer_t* handle) {
 
 
 TEST_IMPL(timer_huge_repeat) {
+
+  init_globals();
+
   ASSERT(0 == uv_timer_init(uv_default_loop(), &tiny_timer));
   ASSERT(0 == uv_timer_init(uv_default_loop(), &huge_timer1));
   ASSERT(0 == uv_timer_start(&tiny_timer, huge_repeat_cb, 2, 2));
@@ -303,6 +327,10 @@ static void timer_run_once_timer_cb(uv_timer_t* handle) {
 TEST_IMPL(timer_run_once) {
   uv_timer_t timer_handle;
 
+  init_globals();
+
+  timer_run_once_timer_cb_called = 0;
+
   ASSERT(0 == uv_timer_init(uv_default_loop(), &timer_handle));
   ASSERT(0 == uv_timer_start(&timer_handle, timer_run_once_timer_cb, 0, 0));
   ASSERT(0 == uv_run(uv_default_loop(), UV_RUN_ONCE));
@@ -323,6 +351,8 @@ TEST_IMPL(timer_run_once) {
 TEST_IMPL(timer_is_closing) {
   uv_timer_t handle;
 
+  init_globals();
+
   ASSERT(0 == uv_timer_init(uv_default_loop(), &handle));
   uv_close((uv_handle_t *)&handle, NULL);
 
@@ -335,6 +365,8 @@ TEST_IMPL(timer_is_closing) {
 
 TEST_IMPL(timer_null_callback) {
   uv_timer_t handle;
+
+  init_globals();
 
   ASSERT(0 == uv_timer_init(uv_default_loop(), &handle));
   ASSERT(UV_EINVAL == uv_timer_start(&handle, NULL, 100, 100));
@@ -356,6 +388,8 @@ static void timer_early_check_cb(uv_timer_t* handle) {
 TEST_IMPL(timer_early_check) {
   uv_timer_t timer_handle;
   const uint64_t timeout_ms = 10;
+
+  init_globals();
 
   timer_early_check_expected_time = uv_now(uv_default_loop()) + timeout_ms;
 

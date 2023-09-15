@@ -65,6 +65,8 @@ TEST_IMPL(udp_multicast_interface) {
   struct sockaddr_in addr;
   struct sockaddr_in baddr;
 
+  close_cb_called = 0;
+  sv_send_cb_called = 0;
   ASSERT(0 == uv_ip4_addr("239.255.0.1", TEST_PORT, &addr));
 
   r = uv_udp_init(uv_default_loop(), &server);

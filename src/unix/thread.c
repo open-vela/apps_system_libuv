@@ -158,14 +158,23 @@ int uv_thread_create_ex(uv_thread_t* tid,
       stack_size = min_stack_size;
   }
 
-  if (stack_size > 0) {
+  if (stack_size > 0 || (params->flags & UV_THREAD_HAS_PRIORITY)) {
     attr = &attr_storage;
 
     if (pthread_attr_init(attr))
       abort();
+  }
 
+  if (stack_size > 0) {
     if (pthread_attr_setstacksize(attr, stack_size))
       abort();
+  }
+
+  if (params->flags & UV_THREAD_HAS_PRIORITY) {
+    struct sched_param param;
+    pthread_attr_getschedparam(attr, &param);
+    param.sched_priority = params->priority;
+    pthread_attr_setschedparam(attr, &param);
   }
 
   f.in = entry;

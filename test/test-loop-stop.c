@@ -49,6 +49,11 @@ static void timer_cb(uv_timer_t* handle) {
 
 TEST_IMPL(loop_stop) {
   int r;
+
+  prepare_called = 0;
+  timer_called = 0;
+  num_ticks = 10;
+
   uv_prepare_init(uv_default_loop(), &prepare_handle);
   uv_prepare_start(&prepare_handle, prepare_cb);
   uv_timer_init(uv_default_loop(), &timer_handle);

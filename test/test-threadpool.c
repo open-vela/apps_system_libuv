@@ -27,6 +27,11 @@ static int after_work_cb_count;
 static uv_work_t work_req;
 static char data;
 
+static void init_globals(void)
+{
+  work_cb_count = 0;
+  after_work_cb_count = 0;
+}
 
 static void work_cb(uv_work_t* req) {
   ASSERT(req == &work_req);
@@ -46,6 +51,8 @@ static void after_work_cb(uv_work_t* req, int status) {
 TEST_IMPL(threadpool_queue_work_simple) {
   int r;
 
+  init_globals();
+
   work_req.data = &data;
   r = uv_queue_work(uv_default_loop(), &work_req, work_cb, after_work_cb);
   ASSERT(r == 0);
@@ -61,6 +68,8 @@ TEST_IMPL(threadpool_queue_work_simple) {
 
 TEST_IMPL(threadpool_queue_work_einval) {
   int r;
+
+  init_globals();
 
   work_req.data = &data;
   r = uv_queue_work(uv_default_loop(), &work_req, NULL, after_work_cb);

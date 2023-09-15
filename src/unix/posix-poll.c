@@ -173,11 +173,17 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
 
   /* Prepare a set of signals to block around poll(), if any.  */
   pset = NULL;
+#ifdef SIGPROF
   if (loop->flags & UV_LOOP_BLOCK_SIGPROF) {
     pset = &set;
     sigemptyset(pset);
     sigaddset(pset, SIGPROF);
   }
+#else
+  (void) set;
+#endif
+
+  user_timeout = 0;
 
   assert(timeout >= -1);
   time_base = loop->time;

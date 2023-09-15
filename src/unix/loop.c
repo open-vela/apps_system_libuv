@@ -220,8 +220,10 @@ int uv__loop_configure(uv_loop_t* loop, uv_loop_option option, va_list ap) {
   if (option != UV_LOOP_BLOCK_SIGNAL)
     return UV_ENOSYS;
 
+#ifdef SIGPROF
   if (va_arg(ap, int) != SIGPROF)
     return UV_EINVAL;
+#endif
 
   loop->flags |= UV_LOOP_BLOCK_SIGPROF;
   return 0;

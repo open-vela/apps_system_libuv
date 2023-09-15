@@ -56,7 +56,7 @@
 #endif
 
 /* preadv() and pwritev() were added in Android N (level 24) */
-#if defined(__linux__) && !(defined(__ANDROID__) && __ANDROID_API__ < 24)
+#if (defined(__linux__) || defined(__NuttX__)) && !(defined(__ANDROID__) && __ANDROID_API__ < 24)
 # define TRY_PREADV 1
 #endif
 

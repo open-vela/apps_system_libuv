@@ -95,6 +95,11 @@ static void repeat_2_cb(uv_timer_t* handle) {
 TEST_IMPL(timer_again) {
   int r;
 
+  close_cb_called = 0;
+  repeat_1_cb_called = 0;
+  repeat_2_cb_called = 0;
+  repeat_2_cb_allowed = 0;
+
   start_time = uv_now(uv_default_loop());
   ASSERT(0 < start_time);
 

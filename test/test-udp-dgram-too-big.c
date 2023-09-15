@@ -62,6 +62,9 @@ TEST_IMPL(udp_dgram_too_big) {
   uv_buf_t buf;
   int r;
 
+  close_cb_called = 0;
+  send_cb_called  = 0;
+
   memset(dgram, 42, sizeof dgram); /* silence valgrind */
 
   r = uv_udp_init(uv_default_loop(), &handle_);

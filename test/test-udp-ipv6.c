@@ -65,10 +65,9 @@ static int can_ipv6_ipv4_dual(void) {
 static void alloc_cb(uv_handle_t* handle,
                      size_t suggested_size,
                      uv_buf_t* buf) {
-  static char slab[65536];
+  buf->base = malloc(65536);
+  buf->len = 65536;
   CHECK_HANDLE(handle);
-  buf->base = slab;
-  buf->len = sizeof(slab);
 }
 
 
@@ -115,6 +114,8 @@ static void ipv6_recv_fail(uv_udp_t* handle,
   if (!is_from_client(addr) || (nread == 0 && addr == NULL))
     return;
   ASSERT(0 && "this function should not have been called");
+
+  free(buf->base);
 }
 
 
@@ -132,6 +133,8 @@ static void ipv6_recv_ok(uv_udp_t* handle,
   ASSERT(nread == 9);
   ASSERT(!memcmp(buf->base, data, 9));
   recv_cb_called++;
+
+  free(buf->base);
 }
 
 

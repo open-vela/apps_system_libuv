@@ -61,6 +61,11 @@ static void fs_cb(uv_fs_t* handle);
 static int thread_called;
 static uv_key_t tls_key;
 
+static void init_globals(void)
+{
+  thread_called = 0;
+  tls_key = 0;
+}
 
 static void getaddrinfo_do(struct getaddrinfo_req* req) {
   int r;
@@ -147,6 +152,8 @@ TEST_IMPL(thread_create) {
   uv_thread_t tid;
   int r;
 
+  init_globals();
+
   r = uv_thread_create(&tid, thread_entry, (void *) 42);
   ASSERT(r == 0);
 
@@ -168,6 +175,7 @@ TEST_IMPL(threadpool_multiple_event_loops) {
   RETURN_SKIP("Test does not currently work in QEMU");
 #endif
   
+  init_globals();
   struct test_thread threads[8];
   size_t i;
   int r;
@@ -201,6 +209,7 @@ static void tls_thread(void* arg) {
 TEST_IMPL(thread_local_storage) {
   char name[] = "main";
   uv_thread_t threads[2];
+  init_globals();
   ASSERT(0 == uv_key_create(&tls_key));
   ASSERT_NULL(uv_key_get(&tls_key));
   uv_key_set(&tls_key, name);
@@ -244,6 +253,7 @@ static void thread_check_stack(void* arg) {
 
 TEST_IMPL(thread_stack_size) {
   uv_thread_t thread;
+  init_globals();
   ASSERT(0 == uv_thread_create(&thread, thread_check_stack, NULL));
   ASSERT(0 == uv_thread_join(&thread));
   return 0;
@@ -253,6 +263,7 @@ TEST_IMPL(thread_stack_size_explicit) {
   uv_thread_t thread;
   uv_thread_options_t options;
 
+  init_globals();
   options.flags = UV_THREAD_HAS_STACK_SIZE;
   options.stack_size = 1024 * 1024;
   ASSERT(0 == uv_thread_create_ex(&thread, &options,

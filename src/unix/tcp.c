@@ -160,7 +160,7 @@ int uv__tcp_bind(uv_tcp_t* tcp,
   if (setsockopt(tcp->io_watcher.fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)))
     return UV__ERR(errno);
 
-#ifndef __OpenBSD__
+#if !defined(__OpenBSD__) && !defined(__NuttX__)
 #ifdef IPV6_V6ONLY
   if (addr->sa_family == AF_INET6) {
     on = (flags & UV_TCP_IPV6ONLY) != 0;

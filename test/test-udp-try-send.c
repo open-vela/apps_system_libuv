@@ -40,11 +40,10 @@ static int close_cb_called;
 static void alloc_cb(uv_handle_t* handle,
                      size_t suggested_size,
                      uv_buf_t* buf) {
-  static char slab[65536];
+  buf->base = malloc(65536);
+  buf->len = 65536;
   CHECK_HANDLE(handle);
-  ASSERT(suggested_size <= sizeof(slab));
-  buf->base = slab;
-  buf->len = sizeof(slab);
+  ASSERT(suggested_size <= 65536);
 }
 
 
@@ -75,6 +74,8 @@ static void sv_recv_cb(uv_udp_t* handle,
   uv_close((uv_handle_t*) &client, close_cb);
 
   sv_recv_cb_called++;
+
+  free(rcvbuf->base);
 }
 
 
@@ -83,6 +84,9 @@ TEST_IMPL(udp_try_send) {
   static char buffer[64 * 1024];
   uv_buf_t buf;
   int r;
+
+  close_cb_called = 0;
+  sv_recv_cb_called = 0;
 
   ASSERT(0 == uv_ip4_addr("0.0.0.0", TEST_PORT, &addr));
 

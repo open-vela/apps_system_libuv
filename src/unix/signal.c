@@ -20,6 +20,7 @@
 
 #include "uv.h"
 #include "internal.h"
+#include "uv-global.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -32,14 +33,6 @@
 # define SA_RESTART 0
 #endif
 
-typedef struct {
-  uv_signal_t* handle;
-  int signum;
-} uv__signal_msg_t;
-
-RB_HEAD(uv__signal_tree_s, uv_signal_s);
-
-
 static int uv__signal_unlock(void);
 static int uv__signal_start(uv_signal_t* handle,
                             uv_signal_cb signal_cb,
@@ -49,12 +42,6 @@ static void uv__signal_event(uv_loop_t* loop, uv__io_t* w, unsigned int events);
 static int uv__signal_compare(uv_signal_t* w1, uv_signal_t* w2);
 static void uv__signal_stop(uv_signal_t* handle);
 static void uv__signal_unregister_handler(int signum);
-
-
-static uv_once_t uv__signal_global_init_guard = UV_ONCE_INIT;
-static struct uv__signal_tree_s uv__signal_tree =
-    RB_INITIALIZER(uv__signal_tree);
-static int uv__signal_lock_pipefd[2] = { -1, -1 };
 
 RB_GENERATE_STATIC(uv__signal_tree_s,
                    uv_signal_s, tree_entry,
@@ -557,4 +544,22 @@ static void uv__signal_stop(uv_signal_t* handle) {
 
   handle->signum = 0;
   uv__handle_stop(handle);
+}
+
+int uv_process_kill(uv_process_t* process, int signum) {
+  return uv_kill(process->pid, signum);
+}
+
+int uv_kill(int pid, int signum) {
+  if (kill(pid, signum))
+    return UV__ERR(errno);
+  else
+    return 0;
+}
+
+void uv__process_close(uv_process_t* handle) {
+  uv__queue_remove(&handle->queue);
+  uv__handle_stop(handle);
+  if (uv__queue_empty(&handle->loop->process_handles))
+    uv_signal_stop(&handle->loop->child_watcher);
 }

@@ -63,9 +63,8 @@ static void connection_cb(uv_stream_t* stream, int status) {
 static void alloc_cb(uv_handle_t* handle,
                      size_t suggested_size,
                      uv_buf_t* buf) {
-  static char slab[65536];
-  buf->base = slab;
-  buf->len = sizeof(slab);
+  buf->base = malloc(65536);
+  buf->len = 65536;
 }
 
 
@@ -82,6 +81,8 @@ static void read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
 
   r = uv_shutdown(&conn->shutdown_req, stream, shutdown_cb);
   ASSERT(r == 0);
+
+  free(buf->base);
 }
 
 

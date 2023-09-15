@@ -21,6 +21,7 @@
 
 #include "uv.h"
 #include "uv-common.h"
+#include "uv-global.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -813,10 +814,6 @@ int uv_loop_configure(uv_loop_t* loop, uv_loop_option option, ...) {
 }
 
 
-static uv_loop_t default_loop_struct;
-static uv_loop_t* default_loop_ptr;
-
-
 uv_loop_t* uv_default_loop(void) {
   if (default_loop_ptr != NULL)
     return default_loop_ptr;
@@ -942,7 +939,6 @@ void uv_free_cpu_info(uv_cpu_info_t* cpu_infos, int count) {
 __attribute__((destructor))
 #endif
 void uv_library_shutdown(void) {
-  static int was_shutdown;
 
   if (uv__exchange_int_relaxed(&was_shutdown, 1))
     return;
@@ -1024,3 +1020,22 @@ uint64_t uv_metrics_idle_time(uv_loop_t* loop) {
     idle_time += uv_hrtime() - entry_time;
   return idle_time;
 }
+
+/* Add uv_global_get here since all system need it but NuttX */
+
+#ifndef __NuttX__
+#undef once
+#undef uv__signal_global_init_guard
+#undef uv__signal_lock_pipefd
+
+uv__global_t* uv__global_get(void)
+{
+  static uv__global_t g_uv_common_global = {
+    .once = UV_ONCE_INIT,
+    .uv__signal_global_init_guard = UV_ONCE_INIT,
+    .uv__signal_lock_pipefd = {-1, -1},
+  };
+
+  return &g_uv_common_global;
+}
+#endif

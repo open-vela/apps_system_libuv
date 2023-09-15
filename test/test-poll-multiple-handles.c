@@ -55,6 +55,9 @@ TEST_IMPL(poll_multiple_handles) {
   }
 #endif
 
+  /* initialize the counting variable */
+  close_cb_called = 0;
+
   sock = socket(AF_INET, SOCK_STREAM, 0);
 #ifdef _WIN32
   ASSERT(sock != INVALID_SOCKET);

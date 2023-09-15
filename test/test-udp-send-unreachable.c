@@ -44,11 +44,10 @@ static int can_recverr;
 static void alloc_cb(uv_handle_t* handle,
                      size_t suggested_size,
                      uv_buf_t* buf) {
-  static char slab[65536];
+  buf->base = malloc(65536);
+  buf->len = 65536;
   CHECK_HANDLE(handle);
-  ASSERT_LE(suggested_size, sizeof(slab));
-  buf->base = slab;
-  buf->len = sizeof(slab);
+  ASSERT_LE(suggested_size, 65536);
   alloc_cb_called++;
 }
 
@@ -90,6 +89,8 @@ static void recv_cb(uv_udp_t* handle,
   } else {
     ASSERT_NOT_NULL(addr);
   }
+
+  free(rcvbuf->base);
 }
 
 

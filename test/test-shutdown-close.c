@@ -69,6 +69,10 @@ TEST_IMPL(shutdown_close_tcp) {
   uv_tcp_t h;
   int r;
 
+  connect_cb_called  = 0;
+  shutdown_cb_called = 0;
+  close_cb_called    = 0;
+
   ASSERT(0 == uv_ip4_addr("127.0.0.1", TEST_PORT, &addr));
   r = uv_tcp_init(uv_default_loop(), &h);
   ASSERT(r == 0);

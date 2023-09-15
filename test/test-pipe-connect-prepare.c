@@ -64,6 +64,9 @@ static void prepare_cb(uv_prepare_t* handle) {
 TEST_IMPL(pipe_connect_on_prepare) {
   int r;
 
+  close_cb_called = 0;
+  connect_cb_called = 0;
+
   r = uv_pipe_init(uv_default_loop(), &pipe_handle, 0);
   ASSERT(r == 0);
 

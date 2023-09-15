@@ -38,6 +38,10 @@ static char PING[] = "PING\n";
 static char PONG[] = "PONG\n";
 static int pinger_on_connect_count;
 
+static inline void init_call_count(void) {
+  pinger_on_connect_count = 0;
+  completed_pingers = 0;
+}
 
 typedef struct {
   int vectored_writes;
@@ -384,6 +388,7 @@ static int run_ping_pong_test(void) {
 
 
 TEST_IMPL(tcp_ping_pong) {
+  init_call_count();
   tcp_pinger_new(0);
   run_ping_pong_test();
 
@@ -394,6 +399,7 @@ TEST_IMPL(tcp_ping_pong) {
 
 
 TEST_IMPL(tcp_ping_pong_vec) {
+  init_call_count();
   tcp_pinger_new(1);
   run_ping_pong_test();
 
@@ -404,6 +410,7 @@ TEST_IMPL(tcp_ping_pong_vec) {
 
 
 TEST_IMPL(tcp6_ping_pong) {
+  init_call_count();
   if (!can_ipv6())
     RETURN_SKIP("IPv6 not supported");
   tcp_pinger_v6_new(0);
@@ -412,6 +419,7 @@ TEST_IMPL(tcp6_ping_pong) {
 
 
 TEST_IMPL(tcp6_ping_pong_vec) {
+  init_call_count();
   if (!can_ipv6())
     RETURN_SKIP("IPv6 not supported");
   tcp_pinger_v6_new(1);

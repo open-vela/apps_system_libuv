@@ -95,6 +95,7 @@ typedef enum {
 /* Have our own assert, so we are sure it does not get optimized away in
  * a release build.
  */
+#undef ASSERT
 #define ASSERT(expr)                                      \
  do {                                                     \
   if (!(expr)) {                                          \
@@ -309,6 +310,7 @@ enum test_status {
 extern int snprintf(char*, size_t, const char*, ...);
 #endif
 
+#undef UNUSED
 #if defined(__clang__) ||                                \
     defined(__GNUC__) ||                                 \
     defined(__INTEL_COMPILER)
@@ -351,7 +353,7 @@ UNUSED static int can_ipv6(void) {
   return supported;
 }
 
-#if defined(__CYGWIN__) || defined(__MSYS__) || defined(__PASE__)
+#if defined(__CYGWIN__) || defined(__MSYS__) || defined(__PASE__) || defined(__NuttX__)
 # define NO_FS_EVENTS "Filesystem watching not supported on this platform."
 #endif
 

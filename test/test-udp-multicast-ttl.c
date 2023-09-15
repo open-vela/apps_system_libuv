@@ -59,6 +59,9 @@ TEST_IMPL(udp_multicast_ttl) {
   uv_buf_t buf;
   struct sockaddr_in addr;
 
+  sv_send_cb_called = 0;
+  close_cb_called = 0;
+
   r = uv_udp_init(uv_default_loop(), &server);
   ASSERT(r == 0);
 

@@ -50,13 +50,13 @@ static int64_t start_time;
 
 
 static void buf_alloc(uv_handle_t* tcp, size_t size, uv_buf_t* buf) {
-  static char slab[64 * 1024];
-  buf->base = slab;
-  buf->len = sizeof(slab);
+  buf->base = malloc(65536);
+  buf->len = 65536;
 }
 
 
 static void buf_free(const uv_buf_t* buf) {
+  free(buf->base);
 }
 
 

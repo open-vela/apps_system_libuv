@@ -52,6 +52,8 @@ TEST_IMPL(async_null_cb) {
    */
   memset(&async_handle, 0xff, sizeof(async_handle));
 
+  check_cb_called = 0;
+
   ASSERT(0 == uv_async_init(uv_default_loop(), &async_handle, NULL));
   ASSERT(0 == uv_check_init(uv_default_loop(), &check_handle));
   ASSERT(0 == uv_check_start(&check_handle, check_cb));

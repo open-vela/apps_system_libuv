@@ -42,6 +42,11 @@ static uv_tcp_t tcpServer;
 static uv_udp_t udpServer;
 static uv_udp_send_t send_req;
 
+static inline void init_count(void) {
+  getsocknamecount_tcp = 0;
+  getpeernamecount = 0;
+  getsocknamecount_udp = 0;
+}
 
 static void alloc(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
   buf->base = malloc(suggested_size);
@@ -325,6 +330,7 @@ static void udp_sender(void) {
 
 
 TEST_IMPL(getsockname_tcp) {
+  init_count();
   loop = uv_default_loop();
 
   if (tcp_listener())
@@ -343,6 +349,7 @@ TEST_IMPL(getsockname_tcp) {
 
 
 TEST_IMPL(getsockname_udp) {
+  init_count();
   loop = uv_default_loop();
 
   if (udp_listener())

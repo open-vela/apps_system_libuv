@@ -53,6 +53,13 @@ static void shutdown_cb(uv_shutdown_t* req, int status);
 
 static int read_size;
 
+static inline void init_call_count(void) {
+  write_cb_called = 0;
+  close_cb_called = 0;
+  shutdown_cb_called = 0;
+  read_size = 0;
+}
+
 
 static void do_write(uv_tcp_t* handle) {
   uv_buf_t buf;
@@ -93,15 +100,17 @@ static void do_close(uv_tcp_t* handle) {
 }
 
 static void alloc_cb(uv_handle_t* handle, size_t size, uv_buf_t* buf) {
-  static char slab[1024];
-  buf->base = slab;
-  buf->len = sizeof(slab);
+  buf->base = malloc(1024);
+  buf->len = 1024;
 }
+
 
 static void read_cb2(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   ASSERT((uv_tcp_t*)stream == &tcp_client);
   if (nread == UV_EOF)
     uv_close((uv_handle_t*) stream, NULL);
+
+  free(buf->base);
 }
 
 
@@ -150,6 +159,8 @@ static void read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
     if (read_size == 16 && client_close == 0)
       do_close(&tcp_accepted);
   }
+
+  free(buf->base);
 }
 
 
@@ -203,6 +214,8 @@ static void do_connect(uv_loop_t* loop, uv_tcp_t* tcp_client) {
 TEST_IMPL(tcp_close_reset_client) {
   int r;
 
+  init_call_count();
+
   loop = uv_default_loop();
 
   start_server(loop, &tcp_server);
@@ -229,6 +242,8 @@ TEST_IMPL(tcp_close_reset_client) {
 
 TEST_IMPL(tcp_close_reset_client_after_shutdown) {
   int r;
+
+  init_call_count();
 
   loop = uv_default_loop();
 
@@ -257,6 +272,8 @@ TEST_IMPL(tcp_close_reset_client_after_shutdown) {
 TEST_IMPL(tcp_close_reset_accepted) {
   int r;
 
+  init_call_count();
+
   loop = uv_default_loop();
 
   start_server(loop, &tcp_server);
@@ -283,6 +300,8 @@ TEST_IMPL(tcp_close_reset_accepted) {
 
 TEST_IMPL(tcp_close_reset_accepted_after_shutdown) {
   int r;
+
+  init_call_count();
 
   loop = uv_default_loop();
 

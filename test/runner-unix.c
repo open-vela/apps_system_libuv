@@ -43,8 +43,10 @@
 #ifdef __APPLE__
 #include <TargetConditionals.h>
 #endif
-
+#ifndef __NuttX__
 extern char** environ;
+#endif
+#include <spawn.h>
 
 static void closefd(int fd) {
   if (close(fd) == 0 || errno == EINTR || errno == EINPROGRESS)
@@ -83,6 +85,7 @@ void platform_init(int argc, char **argv) {
 /* Invoke "argv[0] test-name [test-part]". Store process info in *p. Make sure
  * that all stdio output of the processes is buffered up. */
 int process_start(char* name, char* part, process_info_t* p, int is_helper) {
+  posix_spawn_file_actions_t file_actions;
   FILE* stdout_file;
   int stdout_fd;
   const char* arg;
@@ -119,12 +122,17 @@ int process_start(char* name, char* part, process_info_t* p, int is_helper) {
     return -1;
   }
 
+  posix_spawn_file_actions_init(&file_actions);
+  posix_spawn_file_actions_adddup2(&file_actions, stdout_fd, STDOUT_FILENO);
+  posix_spawn_file_actions_adddup2(&file_actions, stdout_fd, STDERR_FILENO);
+
   if (is_helper) {
     if (pipe(pipefd)) {
       perror("pipe");
       return -1;
     }
 
+    posix_spawn_file_actions_addclose(&file_actions, pipefd[0]);
     snprintf(fdstr, sizeof(fdstr), "%d", pipefd[1]);
     if (setenv("UV_TEST_RUNNER_FD", fdstr, /* overwrite */ 1)) {
       perror("setenv");
@@ -136,30 +144,17 @@ int process_start(char* name, char* part, process_info_t* p, int is_helper) {
   p->status = 0;
 
 #if defined(__APPLE__) && (TARGET_OS_TV || TARGET_OS_WATCH)
-  pid = -1;
+  n = -1;
 #else
-  pid = fork();
+  n = posix_spawn(&pid, args[0], &file_actions, NULL, args, environ);
+  posix_spawn_file_actions_destroy(&file_actions);
 #endif
 
-  if (pid < 0) {
-    perror("fork");
+  if (n != 0) {
+    fprintf(stderr, "posix_spawn: %s\n", strerror(n));
     return -1;
   }
 
-  if (pid == 0) {
-    /* child */
-    if (is_helper)
-      closefd(pipefd[0]);
-    dup2(stdout_fd, STDOUT_FILENO);
-    dup2(stdout_fd, STDERR_FILENO);
-#if !(defined(__APPLE__) && (TARGET_OS_TV || TARGET_OS_WATCH))
-    execve(args[0], args, environ);
-#endif
-    perror("execve()");
-    _exit(127);
-  }
-
-  /* parent */
   p->pid = pid;
   p->name = strdup(name);
   p->stdout_file = stdout_file;

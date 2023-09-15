@@ -716,6 +716,7 @@ TEST_IMPL(fs_file_noent) {
   uv_fs_t req;
   int r;
 
+  open_cb_count = 0;
   loop = uv_default_loop();
 
   r = uv_fs_open(NULL, &req, "does_not_exist", O_RDONLY, 0, NULL);
@@ -741,6 +742,7 @@ TEST_IMPL(fs_file_nametoolong) {
   int r;
   char name[TOO_LONG_NAME_LENGTH + 1];
 
+  open_cb_count = 0;
   loop = uv_default_loop();
 
   memset(name, 'a', TOO_LONG_NAME_LENGTH);
@@ -766,6 +768,7 @@ TEST_IMPL(fs_file_loop) {
   uv_fs_t req;
   int r;
 
+  open_cb_count = 0;
   loop = uv_default_loop();
 
   unlink("test_symlink");
@@ -911,6 +914,17 @@ static void lutime_cb(uv_fs_t* req) {
 
 TEST_IMPL(fs_file_async) {
   int r;
+
+  open_cb_count = 0;
+  close_cb_count = 0;
+  create_cb_count = 0;
+  read_cb_count = 0;
+  write_cb_count = 0;
+  unlink_cb_count = 0;
+  rename_cb_count = 0;
+  fsync_cb_count = 0;
+  fdatasync_cb_count = 0;
+  ftruncate_cb_count = 0;
 
   /* Setup. */
   unlink("test_file");
@@ -1102,6 +1116,12 @@ TEST_IMPL(fs_async_dir) {
   int r;
   uv_dirent_t dent;
 
+  unlink_cb_count = 0;
+  mkdir_cb_count = 0;
+  rmdir_cb_count = 0;
+  scandir_cb_count = 0;
+  stat_cb_count = 0;
+
   /* Setup */
   unlink("test_dir/file1");
   unlink("test_dir/file2");
@@ -1199,6 +1219,7 @@ static int test_sendfile(void (*setup)(int), uv_fs_cb cb, off_t expected_size) {
   uv_fs_t req;
   char buf1[1];
 
+  sendfile_cb_count = 0;
   loop = uv_default_loop();
 
   /* Setup. */
@@ -1294,6 +1315,7 @@ TEST_IMPL(fs_mkdtemp) {
   int r;
   const char* path_template = "test_dir_XXXXXX";
 
+  mkdtemp_cb_count = 0;
   loop = uv_default_loop();
 
   r = uv_fs_mkdtemp(loop, &mkdtemp_req1, path_template, mkdtemp_cb);
@@ -1327,6 +1349,7 @@ TEST_IMPL(fs_mkstemp) {
   const char path_template[] = "test_file_XXXXXX";
   uv_fs_t req;
 
+  mkstemp_cb_count = 0;
   loop = uv_default_loop();
 
   r = uv_fs_mkstemp(loop, &mkstemp_req1, path_template, mkstemp_cb);
@@ -1404,6 +1427,8 @@ TEST_IMPL(fs_fstat) {
    */
   RETURN_SKIP("Test does not currently work in QEMU");
 #endif
+
+  fstat_cb_count = 0;
 
   /* Setup. */
   unlink("test_file");
@@ -1595,6 +1620,8 @@ TEST_IMPL(fs_access) {
   uv_fs_t req;
   uv_file file;
 
+  access_cb_count = 0;
+
   /* Setup. */
   unlink("test_file");
   rmdir("test_dir");
@@ -1670,6 +1697,9 @@ TEST_IMPL(fs_chmod) {
   int r;
   uv_fs_t req;
   uv_file file;
+
+  chmod_cb_count = 0;
+  fchmod_cb_count = 0;
 
   /* Setup. */
   unlink("test_file");
@@ -1886,6 +1916,10 @@ TEST_IMPL(fs_chown) {
   uv_fs_t req;
   uv_file file;
 
+  chown_cb_count = 0;
+  fchown_cb_count = 0;
+  lchown_cb_count = 0;
+
   /* Setup. */
   unlink("test_file");
   unlink("test_file_link");
@@ -1979,6 +2013,8 @@ TEST_IMPL(fs_link) {
   uv_fs_t req;
   uv_file file;
   uv_file link;
+
+  link_cb_count = 0;
 
   /* Setup. */
   unlink("test_file");
@@ -2117,6 +2153,8 @@ TEST_IMPL(fs_readlink) {
 TEST_IMPL(fs_realpath) {
   uv_fs_t req;
 
+  dummy_cb_count = 0;
+
   loop = uv_default_loop();
   ASSERT(0 == uv_fs_realpath(loop, &req, "no_such_file", dummy_cb));
   ASSERT(0 == uv_run(loop, UV_RUN_DEFAULT));
@@ -2142,6 +2180,10 @@ TEST_IMPL(fs_symlink) {
   uv_file link;
   char test_file_abs_buf[PATHMAX];
   size_t test_file_abs_size;
+
+  symlink_cb_count = 0;
+  readlink_cb_count = 0;
+  realpath_cb_count = 0;
 
   /* Setup. */
   unlink("test_file");
@@ -2617,6 +2659,8 @@ TEST_IMPL(fs_utime) {
   uv_fs_t req;
   int r;
 
+  utime_cb_count = 0;
+
   /* Setup. */
   loop = uv_default_loop();
   unlink(path);
@@ -2738,6 +2782,8 @@ TEST_IMPL(fs_futime) {
   RETURN_SKIP("futime is not implemented for AIX versions below 7.1");
 #endif
 
+  futime_cb_count = 0;
+
   /* Setup. */
   loop = uv_default_loop();
   unlink(path);
@@ -2797,6 +2843,7 @@ TEST_IMPL(fs_lutime) {
   uv_fs_t req;
   int r, s;
 
+  lutime_cb_count = 0;
 
   /* Setup */
   loop = uv_default_loop();
@@ -2884,6 +2931,8 @@ TEST_IMPL(fs_scandir_empty_dir) {
   uv_dirent_t dent;
   int r;
 
+  scandir_cb_count = 0;
+
   path = "./empty_dir/";
   loop = uv_default_loop();
 
@@ -2921,6 +2970,7 @@ TEST_IMPL(fs_scandir_non_existent_dir) {
   uv_dirent_t dent;
   int r;
 
+  scandir_cb_count = 0;
   path = "./non_existent_dir/";
   loop = uv_default_loop();
 
@@ -2952,6 +3002,7 @@ TEST_IMPL(fs_scandir_file) {
   const char* path;
   int r;
 
+  scandir_cb_count = 0;
   path = "test/fixtures/empty_file";
   loop = uv_default_loop();
 
@@ -2994,6 +3045,7 @@ TEST_IMPL(fs_open_dir) {
   uv_fs_t req;
   int r, file;
 
+  open_cb_count = 0;
   path = ".";
   loop = uv_default_loop();
 
@@ -3606,6 +3658,7 @@ TEST_IMPL(fs_write_alotof_bufs_with_offset) {
 TEST_IMPL(fs_read_dir) {
   int r;
   char buf[2];
+  mkdir_cb_count = 0;
   loop = uv_default_loop();
 
   /* Setup */
@@ -4514,6 +4567,7 @@ TEST_IMPL(fs_statfs) {
   uv_fs_t req;
   int r;
 
+  statfs_cb_count = 0;
   loop = uv_default_loop();
 
   /* Test the synchronous version. */

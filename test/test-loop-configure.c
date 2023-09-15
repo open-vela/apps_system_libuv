@@ -25,7 +25,7 @@ TEST_IMPL(loop_configure) {
   uv_timer_t timer_handle;
   uv_loop_t loop;
   ASSERT(0 == uv_loop_init(&loop));
-#ifdef _WIN32
+#if defined(_WIN32) || !defined(SIGPROF)
   ASSERT(UV_ENOSYS == uv_loop_configure(&loop, UV_LOOP_BLOCK_SIGNAL, 0));
 #else
   ASSERT(0 == uv_loop_configure(&loop, UV_LOOP_BLOCK_SIGNAL, SIGPROF));

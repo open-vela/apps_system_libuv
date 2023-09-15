@@ -39,6 +39,8 @@ TEST_IMPL(tcp_bind6_error_addrinuse) {
   uv_tcp_t server1, server2;
   int r;
 
+  close_cb_called = 0;
+
   if (!can_ipv6())
     RETURN_SKIP("IPv6 not supported");
 
@@ -76,6 +78,8 @@ TEST_IMPL(tcp_bind6_error_addrnotavail) {
   uv_tcp_t server;
   int r;
 
+  close_cb_called = 0;
+
   if (!can_ipv6())
     RETURN_SKIP("IPv6 not supported");
 
@@ -104,6 +108,8 @@ TEST_IMPL(tcp_bind6_error_fault) {
   uv_tcp_t server;
   int r;
 
+  close_cb_called = 0;
+
   if (!can_ipv6())
     RETURN_SKIP("IPv6 not supported");
 
@@ -131,6 +137,8 @@ TEST_IMPL(tcp_bind6_error_inval) {
   struct sockaddr_in6 addr2;
   uv_tcp_t server;
   int r;
+
+  close_cb_called = 0;
 
   if (!can_ipv6())
     RETURN_SKIP("IPv6 not supported");

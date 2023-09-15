@@ -33,6 +33,13 @@ static int read_cb_called;
 static int write_cb_called;
 static int close_cb_called;
 
+static inline void init_cb_count(void) {
+  connect_cb_called = 0;
+  read_cb_called = 0;
+  write_cb_called = 0;
+  close_cb_called = 0;
+}
+
 static void write_cb(uv_write_t* req, int status) {
   write_cb_called++;
   ASSERT(status == 0);
@@ -83,6 +90,8 @@ static void connect_cb(uv_connect_t* req, int status) {
 
 TEST_IMPL(not_readable_nor_writable_on_read_error) {
   struct sockaddr_in sa;
+
+  init_cb_count();
   ASSERT(0 == uv_ip4_addr("127.0.0.1", TEST_PORT, &sa));
   ASSERT(0 == uv_loop_init(&loop));
   ASSERT(0 == uv_tcp_init(&loop, &tcp_client));

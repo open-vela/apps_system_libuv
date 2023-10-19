@@ -405,6 +405,11 @@ TEST_IMPL(fs_event_watch_dir) {
   uv_loop_t* loop = uv_default_loop();
   int r;
 
+  fs_event_cb_called = 0;
+  fs_event_created = 0;
+  fs_event_removed = 0;
+  close_cb_called = 0;
+
   /* Setup */
   fs_event_unlink_files(NULL);
   remove("watch_dir/file2");
@@ -442,6 +447,12 @@ TEST_IMPL(fs_event_watch_dir_recursive) {
   uv_loop_t* loop;
   int r;
   uv_fs_event_t fs_event_root;
+
+  fs_multievent_cb_called = 0;
+  fs_event_cb_called = 0;
+  fs_event_created = 0;
+  fs_event_removed = 0;
+  close_cb_called = 0;
 
   /* Setup */
   loop = uv_default_loop();
@@ -558,6 +569,9 @@ TEST_IMPL(fs_event_watch_file) {
 
   uv_loop_t* loop = uv_default_loop();
   int r;
+  fs_event_cb_called = 0;
+  timer_cb_called = 0;
+  close_cb_called = 0;
 
   /* Setup */
   remove("watch_dir/file2");
@@ -605,6 +619,7 @@ TEST_IMPL(fs_event_watch_file_exact_path) {
   int r;
 
   loop = uv_default_loop();
+  timer_cb_exact_called = 0;
 
   /* Setup */
   remove("watch_dir/file.js");
@@ -653,6 +668,10 @@ TEST_IMPL(fs_event_watch_file_twice) {
   uv_timer_t timer;
   uv_loop_t* loop;
 
+  create_dir("test/");
+  create_dir("test/fixtures/");
+  create_file("test/fixtures/empty_file");
+
   loop = uv_default_loop();
   timer.data = watchers;
 
@@ -663,6 +682,10 @@ TEST_IMPL(fs_event_watch_file_twice) {
   ASSERT(0 == uv_timer_init(loop, &timer));
   ASSERT(0 == uv_timer_start(&timer, timer_cb_watch_twice, 10, 0));
   ASSERT(0 == uv_run(loop, UV_RUN_DEFAULT));
+
+  remove("test/fixtures/empty_file");
+  remove("test/fixtures/");
+  remove("test/");
 
   MAKE_VALGRIND_HAPPY(loop);
   return 0;
@@ -677,6 +700,9 @@ TEST_IMPL(fs_event_watch_file_current_dir) {
   int r;
 
   loop = uv_default_loop();
+  timer_cb_touch_called = 0;
+  fs_event_cb_called = 0;
+  close_cb_called = 0;
 
   /* Setup */
   remove("watch_file");
@@ -758,6 +784,9 @@ TEST_IMPL(fs_event_no_callback_after_close) {
   uv_loop_t* loop = uv_default_loop();
   int r;
 
+  fs_event_cb_called = 0;
+  close_cb_called = 0;
+
   /* Setup */
   remove("watch_dir/file1");
   remove("watch_dir/");
@@ -795,6 +824,9 @@ TEST_IMPL(fs_event_no_callback_on_close) {
 
   uv_loop_t* loop = uv_default_loop();
   int r;
+
+  fs_event_cb_called = 0;
+  close_cb_called = 0;
 
   /* Setup */
   remove("watch_dir/file1");
@@ -848,6 +880,7 @@ TEST_IMPL(fs_event_immediate_close) {
   int r;
 
   loop = uv_default_loop();
+  close_cb_called = 0;
 
   r = uv_timer_init(loop, &timer);
   ASSERT(r == 0);
@@ -872,6 +905,8 @@ TEST_IMPL(fs_event_close_with_pending_event) {
   int r;
 
   loop = uv_default_loop();
+
+  close_cb_called = 0;
 
   create_dir("watch_dir");
   create_file("watch_dir/file");
@@ -946,6 +981,9 @@ TEST_IMPL(fs_event_close_in_callback) {
   int r;
 
   loop = uv_default_loop();
+  close_cb_called = 0;
+  fs_event_cb_called = 0;
+  fs_event_created = 0;
 
   fs_event_unlink_files(NULL);
   create_dir("watch_dir");
@@ -987,6 +1025,7 @@ TEST_IMPL(fs_event_start_and_close) {
   int r;
 
   loop = uv_default_loop();
+  close_cb_called = 0;
 
   create_dir("watch_dir");
 
@@ -1031,6 +1070,7 @@ TEST_IMPL(fs_event_getpath) {
 
   create_dir("watch_dir");
   create_dir("watch_dir/subfolder");
+  close_cb_called = 0;
 
 
   for (i = 0; i < ARRAY_SIZE(watch_dir); i++) {
@@ -1096,6 +1136,8 @@ TEST_IMPL(fs_event_error_reporting) {
   uv_fs_event_t events[ARRAY_SIZE(loops)];
   uv_loop_t* loop;
   uv_fs_event_t* event;
+
+  fs_event_error_reported = 0;
 
   TEST_FILE_LIMIT(ARRAY_SIZE(loops) * 3);
 

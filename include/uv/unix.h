@@ -45,7 +45,7 @@
 
 #include "uv/threadpool.h"
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(CONFIG_LIBUV_BACKEND_EPOLL)
 # include "uv/linux.h"
 #elif defined (__MVS__)
 # include "uv/os390.h"

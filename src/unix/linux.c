@@ -52,6 +52,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#ifdef __linux__
 #ifndef __NR_io_uring_setup
 # define __NR_io_uring_setup 425
 #endif
@@ -62,6 +63,7 @@
 
 #ifndef __NR_io_uring_register
 # define __NR_io_uring_register 427
+#endif
 #endif
 
 #ifndef __NR_copy_file_range
@@ -335,6 +337,7 @@ unsigned uv__kernel_version(void) {
 }
 
 
+#ifdef __linux__
 ssize_t
 uv__fs_copy_file_range(int fd_in,
                        off_t* off_in,
@@ -389,10 +392,15 @@ ssize_t uv__getrandom(void* buf, size_t buflen, unsigned flags) {
   return rc;
 #endif
 }
+#endif
 
 
 int uv__io_uring_setup(int entries, struct uv__io_uring_params* params) {
+#ifdef __NR_io_uring_setup
   return syscall(__NR_io_uring_setup, entries, params);
+#else
+  return errno = ENOSYS, -1;
+#endif
 }
 
 
@@ -404,6 +412,7 @@ int uv__io_uring_enter(int fd,
    * in newer kernels unless IORING_ENTER_EXT_ARG is set,
    * in which case it takes a struct io_uring_getevents_arg.
    */
+#ifdef __NR_io_uring_enter
   return syscall(__NR_io_uring_enter,
                  fd,
                  to_submit,
@@ -411,16 +420,23 @@ int uv__io_uring_enter(int fd,
                  flags,
                  NULL,
                  0L);
+#else
+  return errno = ENOSYS, -1;
+#endif
 }
 
 
 int uv__io_uring_register(int fd, unsigned opcode, void* arg, unsigned nargs) {
+#ifdef __NR_io_uring_register
   return syscall(__NR_io_uring_register, fd, opcode, arg, nargs);
+#else
+  return errno = ENOSYS, -1;
+#endif
 }
 
 
 static int uv__use_io_uring(void) {
-#if defined(__ANDROID_API__)
+#if defined(__ANDROID_API__) || defined(__NuttX__)
   return 0;  /* Possibly available but blocked by seccomp. */
 #else
   /* Ternary: unknown=0, yes=1, no=-1 */
@@ -695,7 +711,7 @@ int uv__io_check_fd(uv_loop_t* loop, int fd) {
   return rc;
 }
 
-
+#ifdef __linux__
 /* Caller must initialize SQE and call uv__iou_submit(). */
 static struct uv__io_uring_sqe* uv__iou_get_sqe(struct uv__iou* iou,
                                                 uv_loop_t* loop,
@@ -1019,6 +1035,7 @@ int uv__iou_fs_statx(uv_loop_t* loop,
 
   return 1;
 }
+#endif
 
 
 void uv__statx_to_stat(const struct uv__statx* statxbuf, uv_stat_t* buf) {
@@ -1530,6 +1547,7 @@ update_timeout:
       uv__epoll_ctl_flush(epollfd, ctl, &prep);
 }
 
+#ifdef __linux__
 uint64_t uv__hrtime(uv_clocktype_t type) {
   static _Atomic clock_t fast_clock_id = -1;
   struct timespec t;
@@ -2238,6 +2256,7 @@ void uv_loadavg(double avg[3]) {
   avg[1] = (double) info.loads[1] / 65536.0;
   avg[2] = (double) info.loads[2] / 65536.0;
 }
+#endif
 
 
 static int compare_watchers(const struct watcher_list* a,

@@ -177,7 +177,7 @@ struct uv__stream_queued_fds_s {
   int fds[1];
 };
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__NuttX__)
 struct uv__statx_timestamp {
   int64_t tv_sec;
   uint32_t tv_nsec;
@@ -207,7 +207,7 @@ struct uv__statx {
   uint32_t stx_dev_minor;
   uint64_t unused1[14];
 };
-#endif /* __linux__ */
+#endif /* __linux__ || __NuttX__ */
 
 #if defined(_AIX) || \
     defined(__APPLE__) || \

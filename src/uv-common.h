@@ -396,7 +396,7 @@ struct uv__loop_metrics_s {
 void uv__metrics_update_idle_time(uv_loop_t* loop);
 void uv__metrics_set_provider_entry_time(uv_loop_t* loop);
 
-#ifdef __linux__
+#if defined(__linux__) || defined(CONFIG_LIBUV_BACKEND_EPOLL)
 struct uv__iou {
   uint32_t* sqhead;
   uint32_t* sqtail;
@@ -417,17 +417,17 @@ struct uv__iou {
   uint32_t in_flight;
   uint32_t flags;
 };
-#endif  /* __linux__ */
+#endif  /* __linux__ || CONFIG_LIBUV_BACKEND_EPOLL */
 
 struct uv__loop_internal_fields_s {
   unsigned int flags;
   uv__loop_metrics_t loop_metrics;
   int current_timeout;
-#ifdef __linux__
+#if defined(__linux__) || defined(CONFIG_LIBUV_BACKEND_EPOLL)
   struct uv__iou ctl;
   struct uv__iou iou;
   void* inv;  /* used by uv__platform_invalidate_fd() */
-#endif  /* __linux__ */
+#endif  /* __linux__ || CONFIG_LIBUV_BACKEND_EPOLL */
 };
 
 #endif /* UV_COMMON_H_ */

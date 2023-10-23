@@ -161,7 +161,13 @@ static void slab_alloc(uv_handle_t* handle,
                        size_t suggested_size,
                        uv_buf_t* buf) {
   /* up to 16 datagrams at once */
-  buf->base = malloc(16 * 64 * 1024);
+  if (handle->data == NULL) {
+    buf->base = malloc(16 * 64 * 1024);
+    handle->data = buf->base;
+  } else {
+    buf->base = handle->data;
+  }
+
   buf->len = 16 * 64 * 1024;
 }
 
@@ -223,8 +229,10 @@ static void on_send(uv_udp_send_t* req, int status) {
   ASSERT(status == 0);
   req->data = send_freelist;
   send_freelist = req;
-  ASSERT(req->nbufs == 1);
-  free(req->bufs[0].base);
+  if (req->handle->data != NULL) {
+    free(req->handle->data);
+    req->handle->data = NULL;
+  }
 }
 
 static void on_recv(uv_udp_t* handle,

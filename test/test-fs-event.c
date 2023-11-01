@@ -668,8 +668,8 @@ TEST_IMPL(fs_event_watch_file_twice) {
   uv_timer_t timer;
   uv_loop_t* loop;
 
-  create_dir("test/");
-  create_dir("test/fixtures/");
+  create_dir("test");
+  create_dir("test/fixtures");
   create_file("test/fixtures/empty_file");
 
   loop = uv_default_loop();
@@ -684,8 +684,8 @@ TEST_IMPL(fs_event_watch_file_twice) {
   ASSERT(0 == uv_run(loop, UV_RUN_DEFAULT));
 
   remove("test/fixtures/empty_file");
-  remove("test/fixtures/");
-  remove("test/");
+  remove("test/fixtures");
+  remove("test");
 
   MAKE_VALGRIND_HAPPY(loop);
   return 0;
@@ -941,6 +941,7 @@ TEST_IMPL(fs_event_close_with_pending_delete_event) {
   int r;
 
   loop = uv_default_loop();
+  close_cb_called = 0;
 
   create_dir("watch_dir");
   create_file("watch_dir/file");
@@ -1240,6 +1241,8 @@ TEST_IMPL(fs_event_stop_in_cb) {
   uv_fs_event_t fs;
   uv_timer_t timer;
   char path[] = "fs_event_stop_in_cb.txt";
+  timer_cb_touch_called = 0;
+  fs_event_cb_stop_calls = 0;
 
 #if defined(NO_FS_EVENTS)
   RETURN_SKIP(NO_FS_EVENTS);

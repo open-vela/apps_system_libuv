@@ -135,6 +135,13 @@
 # include <netpacket/packet.h>
 #endif /* HAVE_IFADDRS_H */
 
+#ifndef PREP_EVENT_SIZE
+#define PREP_EVENT_SIZE  256
+#endif
+#ifndef MAX_EPOLL_EVENTS
+#define MAX_EPOLL_EVENTS 1024
+#endif
+
 enum {
   UV__IORING_SETUP_SQPOLL = 2u,
 };
@@ -290,11 +297,11 @@ static void maybe_free_watcher_list(struct watcher_list* w,
 
 static void uv__epoll_ctl_flush(int epollfd,
                                 struct uv__iou* ctl,
-                                struct epoll_event (*events)[256]);
+                                struct epoll_event (*events)[PREP_EVENT_SIZE]);
 
 static void uv__epoll_ctl_prep(int epollfd,
                                struct uv__iou* ctl,
-                               struct epoll_event (*events)[256],
+                               struct epoll_event (*events)[PREP_EVENT_SIZE],
                                int op,
                                int fd,
                                struct epoll_event* e);
@@ -646,7 +653,7 @@ void uv__platform_loop_delete(uv_loop_t* loop) {
 
 
 struct uv__invalidate {
-  struct epoll_event (*prep)[256];
+  struct epoll_event (*prep)[PREP_EVENT_SIZE];
   struct epoll_event* events;
   int nfds;
 };
@@ -1172,7 +1179,7 @@ static void uv__poll_io_uring(uv_loop_t* loop, struct uv__iou* iou) {
 
 static void uv__epoll_ctl_prep(int epollfd,
                                struct uv__iou* ctl,
-                               struct epoll_event (*events)[256],
+                               struct epoll_event (*events)[PREP_EVENT_SIZE],
                                int op,
                                int fd,
                                struct epoll_event* e) {
@@ -1225,8 +1232,8 @@ static void uv__epoll_ctl_prep(int epollfd,
 
 static void uv__epoll_ctl_flush(int epollfd,
                                 struct uv__iou* ctl,
-                                struct epoll_event (*events)[256]) {
-  struct epoll_event oldevents[256];
+                                struct epoll_event (*events)[PREP_EVENT_SIZE]) {
+  struct epoll_event oldevents[PREP_EVENT_SIZE];
   struct uv__io_uring_cqe* cqe;
   uint32_t oldslot;
   uint32_t slot;
@@ -1293,8 +1300,8 @@ static void uv__epoll_ctl_flush(int epollfd,
 
 void uv__io_poll(uv_loop_t* loop, int timeout) {
   uv__loop_internal_fields_t* lfields;
-  struct epoll_event events[1024];
-  struct epoll_event prep[256];
+  struct epoll_event events[MAX_EPOLL_EVENTS];
+  struct epoll_event prep[PREP_EVENT_SIZE];
   struct uv__invalidate inv;
   struct epoll_event* pe;
   struct epoll_event e;

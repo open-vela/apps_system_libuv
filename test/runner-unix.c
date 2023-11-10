@@ -91,7 +91,7 @@ int process_start(char* name, char* part, process_info_t* p, int is_helper) {
   const char* arg;
   char* args[16];
   int pipefd[2];
-  char fdstr[8];
+  char fdstr[16];
   ssize_t rc;
   int n;
   pid_t pid;

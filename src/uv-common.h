@@ -54,10 +54,8 @@ extern int snprintf(char*, size_t, const char*, ...);
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #define ARRAY_END(a)  ((a) + ARRAY_SIZE(a))
 
-#ifndef container_of
 #define container_of(ptr, type, member) \
   ((type *) ((char *) (ptr) - offsetof(type, member)))
-#endif
 
 /* C11 defines static_assert to be a macro which calls _Static_assert. */
 #if defined(static_assert)

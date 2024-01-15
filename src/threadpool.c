@@ -179,6 +179,18 @@ void uv__threadpool_cleanup(void) {
 }
 
 
+#ifdef DEF_THREADPOOL_PRIORITY
+static int get_threadpool_priority(void) {
+  int priority;
+  const char* val;
+
+  val = getenv("UV_THREADPOOL_PRIORITY");
+  priority = atoi(val ? val : "0");
+  return priority > 0 ? priority : DEF_THREADPOOL_PRIORITY;
+}
+#endif
+
+
 static void init_threads(void) {
   unsigned int i;
   const char* val;
@@ -198,7 +210,7 @@ static void init_threads(void) {
     0,
 #endif
 #ifdef DEF_THREADPOOL_PRIORITY
-    DEF_THREADPOOL_PRIORITY
+    get_threadpool_priority()
 #endif
   };
 

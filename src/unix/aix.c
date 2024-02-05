@@ -124,7 +124,7 @@ int uv__io_check_fd(uv_loop_t* loop, int fd) {
 
   pc.cmd = PS_DELETE;
   if (pollset_ctl(loop->backend_fd, &pc, 1))
-    abort();
+    assert(0);
 
   return 0;
 }
@@ -182,7 +182,7 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
       if (pollset_ctl(loop->backend_fd, &pc, 1)) {
         if (errno != EINVAL) {
           assert(0 && "Failed to add file descriptor (pc.fd) to pollset");
-          abort();
+          assert(0);
         }
         /* Check if the fd is already in the pollset */
         pqry.fd = pc.fd;
@@ -190,10 +190,10 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
         switch (rc) {
         case -1:
           assert(0 && "Failed to query pollset for file descriptor");
-          abort();
+          assert(0);
         case 0:
           assert(0 && "Pollset does not contain file descriptor");
-          abort();
+          assert(0);
         }
         /* If we got here then the pollset already contained the file descriptor even though
          * we didn't think it should. This probably shouldn't happen, but we can continue. */
@@ -210,12 +210,12 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
       pc.cmd = PS_DELETE;
       if (pollset_ctl(loop->backend_fd, &pc, 1)) {
         assert(0 && "Failed to delete file descriptor (pc.fd) from pollset");
-        abort();
+        assert(0);
       }
       pc.cmd = PS_ADD;
       if (pollset_ctl(loop->backend_fd, &pc, 1)) {
         assert(0 && "Failed to add file descriptor (pc.fd) to pollset");
-        abort();
+        assert(0);
       }
     }
 
@@ -274,7 +274,7 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
 
     if (nfds == -1) {
       if (errno != EINTR) {
-        abort();
+        assert(0);
       }
 
       if (reset_timeout != 0) {

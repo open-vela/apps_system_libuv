@@ -636,7 +636,7 @@ int uv__io_check_fd(uv_loop_t* loop, int fd) {
   while (rv == -1 && errno == EINTR);
 
   if (rv == -1)
-    abort();
+    assert(0);
 
   if (p[0].revents & POLLNVAL)
     return -1;
@@ -725,7 +725,7 @@ int uv__fs_event_stop(uv_fs_event_t* handle) {
    */
   rc = __w_pioctl("/", _IOCC_REGFILEINT, sizeof(reg_struct), &reg_struct);
   if (rc != 0 && errno != EALREADY && errno != ENOENT)
-    abort();
+    assert(0);
 
   if (handle->path != NULL) {
     uv__free(handle->path);
@@ -776,7 +776,7 @@ static int os390_message_queue_handler(uv__os390_epoll* ep) {
     return 0;
 
   if (msglen == -1)
-    abort();
+    assert(0);
 
   events = 0;
   if (msg.__rfim_event == _RFIM_ATTR || msg.__rfim_event == _RFIM_WRITE)
@@ -886,13 +886,13 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
      */
     if (epoll_ctl(loop->ep, op, w->fd, &e)) {
       if (errno != EEXIST)
-        abort();
+        assert(0);
 
       assert(op == EPOLL_CTL_ADD);
 
       /* We've reactivated a file descriptor that's been watched before. */
       if (epoll_ctl(loop->ep, EPOLL_CTL_MOD, w->fd, &e))
-        abort();
+        assert(0);
     }
 
     w->events = w->pevents;
@@ -962,7 +962,7 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
     if (nfds == -1) {
 
       if (errno != EINTR)
-        abort();
+        assert(0);
 
       if (reset_timeout != 0) {
         timeout = user_timeout;

@@ -33,7 +33,7 @@ static char* process_title;
 
 static void init_process_title_mutex_once(void) {
   if (uv_mutex_init(&process_title_mutex))
-    abort();
+    assert(0);
 }
 
 

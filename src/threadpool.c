@@ -36,7 +36,7 @@ static unsigned int slow_work_thread_threshold(void) {
 }
 
 static void uv__cancelled(struct uv__work* w) {
-  abort();
+  assert(0);
 }
 
 
@@ -166,7 +166,7 @@ void uv__threadpool_cleanup(void) {
 
   for (i = 0; i < nthreads; i++)
     if (uv_thread_join(threads + i))
-      abort();
+      assert(0);
 
   if (threads != default_threads)
     uv__free(threads);
@@ -233,21 +233,21 @@ static void init_threads(void) {
   }
 
   if (uv_cond_init(&cond))
-    abort();
+    assert(0);
 
   if (uv_mutex_init(&mutex))
-    abort();
+    assert(0);
 
   uv__queue_init(&lwq);
   uv__queue_init(&slow_io_pending_wq);
   uv__queue_init(&run_slow_work_message);
 
   if (uv_sem_init(&sem, 0))
-    abort();
+    assert(0);
 
   for (i = 0; i < nthreads; i++)
     if (uv_thread_create_ex(threads + i, &params, worker, &sem))
-      abort();
+      assert(0);
 
   for (i = 0; i < nthreads; i++)
     uv_sem_wait(&sem);
@@ -271,7 +271,7 @@ static void init_once(void) {
    * as the work queue.
    */
   if (pthread_atfork(NULL, NULL, &reset_once))
-    abort();
+    assert(0);
 #endif
   init_threads();
 }

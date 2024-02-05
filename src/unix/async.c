@@ -154,7 +154,7 @@ static void uv__async_io(uv_loop_t* loop, uv__io_t* w, unsigned int events) {
     if (errno == EINTR)
       continue;
 
-    abort();
+    assert(0);
   }
 
   uv__queue_move(&loop->async_handles, &queue);
@@ -208,7 +208,7 @@ static void uv__async_send(uv_loop_t* loop) {
     if (errno == EAGAIN || errno == EWOULDBLOCK)
       return;
 
-  abort();
+  assert(0);
 }
 
 

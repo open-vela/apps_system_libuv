@@ -40,7 +40,7 @@ static void uv__getnameinfo_work(struct uv__work* w) {
   else if (req->storage.ss_family == AF_INET6)
     salen = sizeof(struct sockaddr_in6);
   else
-    abort();
+    assert(0);
 
   err = getnameinfo((struct sockaddr*) &req->storage,
                     salen,

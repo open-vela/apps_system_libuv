@@ -877,7 +877,7 @@ static void maybe_resize(uv_loop_t* loop, unsigned int len) {
   nwatchers = next_power_of_two(len + 1) - 1;
   watchers = uv__malloc((nwatchers + 1) * sizeof(loop->watchers[0]));
   if (watchers == NULL)
-    abort();
+    assert(0);
 
   for (i = 0; i < nwatchers; i++) {
     uv__queue_init(&watchers[i]);
@@ -1098,7 +1098,7 @@ int uv__slurp(const char* filename, char* buf, size_t len) {
   while (n == -1 && errno == EINTR);
 
   if (uv__close_nocheckstdio(fd))
-    abort();
+    assert(0);
 
   if (n < 0)
     return UV__ERR(errno);

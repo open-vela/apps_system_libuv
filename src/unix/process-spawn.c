@@ -66,7 +66,7 @@ static void uv__chld(uv_signal_t* handle, int signum) {
 
     if (pid == -1) {
       if (errno != ECHILD)
-        abort();
+        assert(0);
       continue;
     }
 

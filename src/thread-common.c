@@ -136,7 +136,7 @@ void uv_barrier_destroy(uv_barrier_t* barrier) {
     uv_cond_wait((uv_cond_t*) &b->cond, &b->mutex);
 
   if (b->in != 0)
-    abort();
+    assert(0);
 
   uv_mutex_unlock(&b->mutex);
   uv_mutex_destroy(&b->mutex);
@@ -161,7 +161,7 @@ int uv_barrier_wait(uv_barrier_t* barrier) {
   rc = pthread_barrier_wait(barrier);
   if (rc != 0)
     if (rc != PTHREAD_BARRIER_SERIAL_THREAD)
-      abort();
+      assert(0);
 
   return rc == PTHREAD_BARRIER_SERIAL_THREAD;
 }
@@ -169,7 +169,7 @@ int uv_barrier_wait(uv_barrier_t* barrier) {
 
 void uv_barrier_destroy(uv_barrier_t* barrier) {
   if (pthread_barrier_destroy(barrier))
-    abort();
+    assert(0);
 }
 
 #endif

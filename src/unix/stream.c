@@ -183,7 +183,7 @@ static void uv__stream_osx_select(void* arg) {
         continue;
 
       /* XXX: Possible?! */
-      abort();
+      assert(0);
     }
 
     /* Ignore timeouts */
@@ -207,7 +207,7 @@ static void uv__stream_osx_select(void* arg) {
         if (errno == EINTR)
           continue;
 
-        abort();
+        assert(0);
       }
 
     /* Handle events */

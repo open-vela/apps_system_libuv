@@ -732,7 +732,7 @@ int uv__io_check_fd(uv_loop_t* loop, int fd) {
 
   if (rc == 0)
     if (epoll_ctl(loop->backend_fd, EPOLL_CTL_DEL, fd, &e))
-      abort();
+      assert(0);
 
   return rc;
 }
@@ -1196,16 +1196,16 @@ static void uv__epoll_ctl_prep(int epollfd,
       return;  /* Ignore errors, may be racing with another thread. */
 
     if (op != EPOLL_CTL_ADD)
-      abort();
+      assert(0);
 
     if (errno != EEXIST)
-      abort();
+      assert(0);
 
     /* File descriptor that's been watched before, update event mask. */
     if (!epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, e))
       return;
 
-    abort();
+    assert(0);
   } else {
     mask = ctl->sqmask;
     slot = (*ctl->sqtail)++ & mask;
@@ -1255,7 +1255,7 @@ static void uv__epoll_ctl_flush(int epollfd,
     perror("libuv: io_uring_enter(getevents)");  /* Can't happen. */
 
   if (rc != (int) n)
-    abort();
+    assert(0);
 
   assert(*ctl->sqhead == *ctl->sqtail);
 
@@ -1283,10 +1283,10 @@ static void uv__epoll_ctl_flush(int epollfd,
       continue;
 
     if (op != EPOLL_CTL_ADD)
-      abort();
+      assert(0);
 
     if (cqe->res != -EEXIST)
-      abort();
+      assert(0);
 
     uv__epoll_ctl_prep(epollfd,
                        ctl,
@@ -1435,7 +1435,7 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
 
     if (nfds == -1) {
       if (errno != EINTR)
-        abort();
+        assert(0);
 
       if (reset_timeout != 0) {
         timeout = user_timeout;

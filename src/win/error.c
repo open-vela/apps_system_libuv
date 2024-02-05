@@ -59,7 +59,7 @@ void uv_fatal_error(const int errorno, const char* syscall) {
   }
 
   DebugBreak();
-  abort();
+  assert(0);
 }
 
 

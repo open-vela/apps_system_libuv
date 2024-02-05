@@ -55,7 +55,7 @@ void uv__platform_loop_delete(uv_loop_t* loop) {
 
 static void uv__hrtime_init_once(void) {
   if (KERN_SUCCESS != mach_timebase_info(&timebase))
-    abort();
+    assert(0);
 
   time_func = (uint64_t (*)(void)) dlsym(RTLD_DEFAULT, "mach_continuous_time");
   if (time_func == NULL)

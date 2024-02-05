@@ -107,7 +107,7 @@ union uv__sockaddr {
 #define UNREACHABLE()                                                         \
   do {                                                                        \
     assert(0 && "unreachable code");                                          \
-    abort();                                                                  \
+    assert(0);                                                                  \
   }                                                                           \
   while (0)
 

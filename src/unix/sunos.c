@@ -137,7 +137,7 @@ int uv__io_check_fd(uv_loop_t* loop, int fd) {
 
   if (port_dissociate(loop->backend_fd, PORT_SOURCE_FD, fd)) {
     perror("(libuv) port_dissociate()");
-    abort();
+    assert(0);
   }
 
   return 0;
@@ -192,7 +192,7 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
                        ev,
                        0)) {
       perror("(libuv) port_associate()");
-      abort();
+      assert(0);
     }
 
     w->events = w->pevents;
@@ -255,7 +255,7 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
         saved_errno = errno;
       } else {
         perror("(libuv) port_getn()");
-        abort();
+        assert(0);
       }
     }
 

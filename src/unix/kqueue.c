@@ -105,7 +105,7 @@ int uv__io_check_fd(uv_loop_t* loop, int fd) {
   EV_SET(&ev, fd, EVFILT_READ, EV_DELETE, 0, 0, 0);
   if (rc == 0)
     if (kevent(loop->backend_fd, &ev, 1, NULL, 0, NULL))
-      abort();
+      assert(0);
 
   return rc;
 }
@@ -122,7 +122,7 @@ static void uv__kqueue_delete(int kqfd, const struct kevent *ev) {
   if (errno == EBADF || errno == ENOENT)
     return;
 
-  abort();
+  assert(0);
 }
 
 
@@ -193,7 +193,7 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
 
       if (++nevents == ARRAY_SIZE(events)) {
         if (kevent(loop->backend_fd, events, nevents, NULL, 0, NULL))
-          abort();
+          assert(0);
         nevents = 0;
       }
     }
@@ -203,7 +203,7 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
 
       if (++nevents == ARRAY_SIZE(events)) {
         if (kevent(loop->backend_fd, events, nevents, NULL, 0, NULL))
-          abort();
+          assert(0);
         nevents = 0;
       }
     }
@@ -213,7 +213,7 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
 
       if (++nevents == ARRAY_SIZE(events)) {
         if (kevent(loop->backend_fd, events, nevents, NULL, 0, NULL))
-          abort();
+          assert(0);
         nevents = 0;
       }
     }
@@ -511,7 +511,7 @@ static void uv__fs_event(uv_loop_t* loop, uv__io_t* w, unsigned int fflags) {
   EV_SET(&ev, w->fd, EVFILT_VNODE, EV_ADD | EV_ONESHOT, fflags, 0, 0);
 
   if (kevent(loop->backend_fd, &ev, 1, NULL, 0, NULL))
-    abort();
+    assert(0);
 }
 
 

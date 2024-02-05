@@ -865,7 +865,7 @@ int uv_udp_set_multicast_interface(uv_udp_t* handle, const char* interface_addr)
     }
   } else {
     assert(0 && "unexpected address family");
-    abort();
+    assert(0);
   }
 
   return 0;

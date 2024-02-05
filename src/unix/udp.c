@@ -312,7 +312,7 @@ write_queue_drain:
         p->msg_hdr.msg_namelen = sizeof(struct sockaddr_un);
       else {
         assert(0 && "unsupported address family");
-        abort();
+        assert(0);
       }
     }
     h[pkts].msg_hdr.msg_iov = (struct iovec*) req->bufs;
@@ -393,7 +393,7 @@ write_queue_drain:
         h.msg_namelen = sizeof(struct sockaddr_un);
       else {
         assert(0 && "unsupported address family");
-        abort();
+        assert(0);
       }
     }
     h.msg_iov = (struct iovec*) req->bufs;
@@ -581,7 +581,7 @@ static int uv__udp_maybe_deferred_bind(uv_udp_t* handle,
   }
   default:
     assert(0 && "unsupported address family");
-    abort();
+    assert(0);
   }
 
   return uv__udp_bind(handle, &taddr.addr, addrlen, flags);
@@ -1308,7 +1308,7 @@ int uv_udp_set_multicast_interface(uv_udp_t* handle, const char* interface_addr)
     }
   } else {
     assert(0 && "unexpected address family");
-    abort();
+    assert(0);
   }
 
   return 0;

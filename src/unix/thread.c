@@ -162,12 +162,12 @@ int uv_thread_create_ex(uv_thread_t* tid,
     attr = &attr_storage;
 
     if (pthread_attr_init(attr))
-      abort();
+      assert(0);
   }
 
   if (stack_size > 0) {
     if (pthread_attr_setstacksize(attr, stack_size))
-      abort();
+      assert(0);
   }
 
   if (params->flags & UV_THREAD_HAS_PRIORITY) {
@@ -309,15 +309,15 @@ int uv_mutex_init(uv_mutex_t* mutex) {
   int err;
 
   if (pthread_mutexattr_init(&attr))
-    abort();
+    assert(0);
 
   if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK))
-    abort();
+    assert(0);
 
   err = pthread_mutex_init(mutex, &attr);
 
   if (pthread_mutexattr_destroy(&attr))
-    abort();
+    assert(0);
 
   return UV__ERR(err);
 #endif
@@ -329,15 +329,15 @@ int uv_mutex_init_recursive(uv_mutex_t* mutex) {
   int err;
 
   if (pthread_mutexattr_init(&attr))
-    abort();
+    assert(0);
 
   if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE))
-    abort();
+    assert(0);
 
   err = pthread_mutex_init(mutex, &attr);
 
   if (pthread_mutexattr_destroy(&attr))
-    abort();
+    assert(0);
 
   return UV__ERR(err);
 }
@@ -345,13 +345,13 @@ int uv_mutex_init_recursive(uv_mutex_t* mutex) {
 
 void uv_mutex_destroy(uv_mutex_t* mutex) {
   if (pthread_mutex_destroy(mutex))
-    abort();
+    assert(0);
 }
 
 
 void uv_mutex_lock(uv_mutex_t* mutex) {
   if (pthread_mutex_lock(mutex))
-    abort();
+    assert(0);
 }
 
 
@@ -361,7 +361,7 @@ int uv_mutex_trylock(uv_mutex_t* mutex) {
   err = pthread_mutex_trylock(mutex);
   if (err) {
     if (err != EBUSY && err != EAGAIN)
-      abort();
+      assert(0);
     return UV_EBUSY;
   }
 
@@ -371,7 +371,7 @@ int uv_mutex_trylock(uv_mutex_t* mutex) {
 
 void uv_mutex_unlock(uv_mutex_t* mutex) {
   if (pthread_mutex_unlock(mutex))
-    abort();
+    assert(0);
 }
 
 
@@ -382,13 +382,13 @@ int uv_rwlock_init(uv_rwlock_t* rwlock) {
 
 void uv_rwlock_destroy(uv_rwlock_t* rwlock) {
   if (pthread_rwlock_destroy(rwlock))
-    abort();
+    assert(0);
 }
 
 
 void uv_rwlock_rdlock(uv_rwlock_t* rwlock) {
   if (pthread_rwlock_rdlock(rwlock))
-    abort();
+    assert(0);
 }
 
 
@@ -398,7 +398,7 @@ int uv_rwlock_tryrdlock(uv_rwlock_t* rwlock) {
   err = pthread_rwlock_tryrdlock(rwlock);
   if (err) {
     if (err != EBUSY && err != EAGAIN)
-      abort();
+      assert(0);
     return UV_EBUSY;
   }
 
@@ -408,13 +408,13 @@ int uv_rwlock_tryrdlock(uv_rwlock_t* rwlock) {
 
 void uv_rwlock_rdunlock(uv_rwlock_t* rwlock) {
   if (pthread_rwlock_unlock(rwlock))
-    abort();
+    assert(0);
 }
 
 
 void uv_rwlock_wrlock(uv_rwlock_t* rwlock) {
   if (pthread_rwlock_wrlock(rwlock))
-    abort();
+    assert(0);
 }
 
 
@@ -424,7 +424,7 @@ int uv_rwlock_trywrlock(uv_rwlock_t* rwlock) {
   err = pthread_rwlock_trywrlock(rwlock);
   if (err) {
     if (err != EBUSY && err != EAGAIN)
-      abort();
+      assert(0);
     return UV_EBUSY;
   }
 
@@ -434,13 +434,13 @@ int uv_rwlock_trywrlock(uv_rwlock_t* rwlock) {
 
 void uv_rwlock_wrunlock(uv_rwlock_t* rwlock) {
   if (pthread_rwlock_unlock(rwlock))
-    abort();
+    assert(0);
 }
 
 
 void uv_once(uv_once_t* guard, void (*callback)(void)) {
   if (pthread_once(guard, callback))
-    abort();
+    assert(0);
 }
 
 #if defined(__APPLE__) && defined(__MACH__)
@@ -456,20 +456,20 @@ int uv_sem_init(uv_sem_t* sem, unsigned int value) {
   if (err == KERN_RESOURCE_SHORTAGE)
     return UV_ENOMEM;
 
-  abort();
+  assert(0);
   return UV_EINVAL;  /* Satisfy the compiler. */
 }
 
 
 void uv_sem_destroy(uv_sem_t* sem) {
   if (semaphore_destroy(mach_task_self(), *sem))
-    abort();
+    assert(0);
 }
 
 
 void uv_sem_post(uv_sem_t* sem) {
   if (semaphore_signal(*sem))
-    abort();
+    assert(0);
 }
 
 
@@ -481,7 +481,7 @@ void uv_sem_wait(uv_sem_t* sem) {
   while (r == KERN_ABORTED);
 
   if (r != KERN_SUCCESS)
-    abort();
+    assert(0);
 }
 
 
@@ -498,7 +498,7 @@ int uv_sem_trywait(uv_sem_t* sem) {
   if (err == KERN_OPERATION_TIMED_OUT)
     return UV_EAGAIN;
 
-  abort();
+  assert(0);
   return UV_EINVAL;  /* Satisfy the compiler. */
 }
 
@@ -631,13 +631,13 @@ static int uv__sem_init(uv_sem_t* sem, unsigned int value) {
 
 static void uv__sem_destroy(uv_sem_t* sem) {
   if (sem_destroy(sem))
-    abort();
+    assert(0);
 }
 
 
 static void uv__sem_post(uv_sem_t* sem) {
   if (sem_post(sem))
-    abort();
+    assert(0);
 }
 
 
@@ -649,7 +649,7 @@ static void uv__sem_wait(uv_sem_t* sem) {
   while (r == -1 && errno == EINTR);
 
   if (r)
-    abort();
+    assert(0);
 }
 
 
@@ -663,7 +663,7 @@ static int uv__sem_trywait(uv_sem_t* sem) {
   if (r) {
     if (errno == EAGAIN)
       return UV_EAGAIN;
-    abort();
+    assert(0);
   }
 
   return 0;
@@ -765,42 +765,42 @@ void uv_cond_destroy(uv_cond_t* cond) {
   int err;
 
   if (pthread_mutex_init(&mutex, NULL))
-    abort();
+    assert(0);
 
   if (pthread_mutex_lock(&mutex))
-    abort();
+    assert(0);
 
   ts.tv_sec = 0;
   ts.tv_nsec = 1;
 
   err = pthread_cond_timedwait_relative_np(cond, &mutex, &ts);
   if (err != 0 && err != ETIMEDOUT)
-    abort();
+    assert(0);
 
   if (pthread_mutex_unlock(&mutex))
-    abort();
+    assert(0);
 
   if (pthread_mutex_destroy(&mutex))
-    abort();
+    assert(0);
 #endif /* defined(__APPLE__) && defined(__MACH__) */
 
   if (pthread_cond_destroy(cond))
-    abort();
+    assert(0);
 }
 
 void uv_cond_signal(uv_cond_t* cond) {
   if (pthread_cond_signal(cond))
-    abort();
+    assert(0);
 }
 
 void uv_cond_broadcast(uv_cond_t* cond) {
   if (pthread_cond_broadcast(cond))
-    abort();
+    assert(0);
 }
 
 void uv_cond_wait(uv_cond_t* cond, uv_mutex_t* mutex) {
   if (pthread_cond_wait(cond, mutex))
-    abort();
+    assert(0);
 }
 
 
@@ -818,7 +818,7 @@ int uv_cond_timedwait(uv_cond_t* cond, uv_mutex_t* mutex, uint64_t timeout) {
 #else
 #if defined(__MVS__)
   if (gettimeofday(&tv, NULL))
-    abort();
+    assert(0);
   timeout += tv.tv_sec * NANOSEC + tv.tv_usec * 1e3;
 #else
   timeout += uv__hrtime(UV_CLOCK_PRECISE);
@@ -835,7 +835,7 @@ int uv_cond_timedwait(uv_cond_t* cond, uv_mutex_t* mutex, uint64_t timeout) {
   if (r == ETIMEDOUT)
     return UV_ETIMEDOUT;
 
-  abort();
+  assert(0);
 #ifndef __SUNPRO_C
   return UV_EINVAL;  /* Satisfy the compiler. */
 #endif
@@ -849,7 +849,7 @@ int uv_key_create(uv_key_t* key) {
 
 void uv_key_delete(uv_key_t* key) {
   if (pthread_key_delete(*key))
-    abort();
+    assert(0);
 }
 
 
@@ -860,5 +860,5 @@ void* uv_key_get(uv_key_t* key) {
 
 void uv_key_set(uv_key_t* key, void* value) {
   if (pthread_setspecific(*key, value))
-    abort();
+    assert(0);
 }

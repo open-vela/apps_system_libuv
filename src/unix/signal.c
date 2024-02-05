@@ -58,7 +58,7 @@ static void uv__signal_global_init(void) {
      * we only want to do it once.
      */
     if (pthread_atfork(NULL, NULL, &uv__signal_global_reinit))
-      abort();
+      assert(0);
 
   uv__signal_global_reinit();
 }
@@ -88,10 +88,10 @@ static void uv__signal_global_reinit(void) {
   uv__signal_cleanup();
 
   if (uv__make_pipe(uv__signal_lock_pipefd, 0))
-    abort();
+    assert(0);
 
   if (uv__signal_unlock())
-    abort();
+    assert(0);
 }
 
 
@@ -128,24 +128,24 @@ static void uv__signal_block_and_lock(sigset_t* saved_sigmask) {
   sigset_t new_mask;
 
   if (sigfillset(&new_mask))
-    abort();
+    assert(0);
 
   /* to shut up valgrind */
   sigemptyset(saved_sigmask);
   if (pthread_sigmask(SIG_SETMASK, &new_mask, saved_sigmask))
-    abort();
+    assert(0);
 
   if (uv__signal_lock())
-    abort();
+    assert(0);
 }
 
 
 static void uv__signal_unlock_and_unblock(sigset_t* saved_sigmask) {
   if (uv__signal_unlock())
-    abort();
+    assert(0);
 
   if (pthread_sigmask(SIG_SETMASK, saved_sigmask, NULL))
-    abort();
+    assert(0);
 }
 
 
@@ -215,7 +215,7 @@ static int uv__signal_register_handler(int signum, int oneshot) {
   /* XXX use a separate signal stack? */
   memset(&sa, 0, sizeof(sa));
   if (sigfillset(&sa.sa_mask))
-    abort();
+    assert(0);
   sa.sa_handler = uv__signal_handler;
   sa.sa_flags = SA_RESTART;
   if (oneshot)
@@ -241,7 +241,7 @@ static void uv__signal_unregister_handler(int signum) {
    * should never happen.
    */
   if (sigaction(signum, &sa, NULL))
-    abort();
+    assert(0);
 }
 
 
@@ -434,7 +434,7 @@ static void uv__signal_event(uv_loop_t* loop,
 
     /* Other errors really should never happen. */
     if (r == -1)
-      abort();
+      assert(0);
 
     bytes += r;
 

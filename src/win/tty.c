@@ -160,7 +160,7 @@ static void uv__determine_vterm_state(HANDLE handle);
 
 void uv__console_init(void) {
   if (uv_sem_init(&uv_tty_output_lock, 1))
-    abort();
+    assert(0);
   uv__tty_console_handle = CreateFileW(L"CONOUT$",
                                        GENERIC_READ | GENERIC_WRITE,
                                        FILE_SHARE_WRITE,
@@ -2115,7 +2115,7 @@ static int uv__tty_write_bufs(uv_tty_t* handle,
         continue;
       } else {
         /* Inconsistent state */
-        abort();
+        assert(0);
       }
 
       if (utf8_codepoint == 0x0a || utf8_codepoint == 0x0d) {

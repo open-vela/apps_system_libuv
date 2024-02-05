@@ -110,20 +110,20 @@ static int uv__tty_is_slave(const int fd) {
   if (pts == NODEVMAJOR) {
     pts = getdevmajor("pts", S_IFCHR);
     if (pts == NODEVMAJOR)
-      abort();
+      assert(0);
   }
 
   /* Lookup stat structure behind the file descriptor. */
   if (uv__fstat(fd, &sb) != 0)
-    abort();
+    assert(0);
 
   /* Assert character device. */
   if (!S_ISCHR(sb.st_mode))
-    abort();
+    assert(0);
 
   /* Assert valid major. */
   if (major(sb.st_rdev) == NODEVMAJOR)
-    abort();
+    assert(0);
 
   result = (pts == major(sb.st_rdev));
 #else

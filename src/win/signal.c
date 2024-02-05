@@ -42,7 +42,7 @@ int uv__signal_start(uv_signal_t* handle,
 void uv__signals_init(void) {
   InitializeCriticalSection(&uv__signal_lock);
   if (!SetConsoleCtrlHandler(uv__signal_control_handler, TRUE))
-    abort();
+    assert(0);
 }
 
 

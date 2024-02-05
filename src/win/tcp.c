@@ -778,7 +778,7 @@ static int uv__tcp_try_connect(uv_connect_t* req,
     } else if (addrlen == sizeof(uv_addr_ip6_any_)) {
       bind_addr = (const struct sockaddr*) &uv_addr_ip6_any_;
     } else {
-      abort();
+      assert(0);
     }
     err = uv__tcp_try_bind(handle, bind_addr, addrlen, 0);
     if (err)

@@ -83,7 +83,7 @@ static uv_once_t uv__current_thread_init_guard = UV_ONCE_INIT;
 
 static void uv__init_current_thread_key(void) {
   if (uv_key_create(&uv__current_thread_key))
-    abort();
+    assert(0);
 }
 
 
@@ -392,19 +392,19 @@ int uv_sem_init(uv_sem_t* sem, unsigned int value) {
 
 void uv_sem_destroy(uv_sem_t* sem) {
   if (!CloseHandle(*sem))
-    abort();
+    assert(0);
 }
 
 
 void uv_sem_post(uv_sem_t* sem) {
   if (!ReleaseSemaphore(*sem, 1, NULL))
-    abort();
+    assert(0);
 }
 
 
 void uv_sem_wait(uv_sem_t* sem) {
   if (WaitForSingleObject(*sem, INFINITE) != WAIT_OBJECT_0)
-    abort();
+    assert(0);
 }
 
 
@@ -417,7 +417,7 @@ int uv_sem_trywait(uv_sem_t* sem) {
   if (r == WAIT_TIMEOUT)
     return UV_EAGAIN;
 
-  abort();
+  assert(0);
   return -1; /* Satisfy the compiler. */
 }
 
@@ -446,7 +446,7 @@ void uv_cond_broadcast(uv_cond_t* cond) {
 
 void uv_cond_wait(uv_cond_t* cond, uv_mutex_t* mutex) {
   if (!SleepConditionVariableCS(&cond->cond_var, mutex, INFINITE))
-    abort();
+    assert(0);
 }
 
 
@@ -454,7 +454,7 @@ int uv_cond_timedwait(uv_cond_t* cond, uv_mutex_t* mutex, uint64_t timeout) {
   if (SleepConditionVariableCS(&cond->cond_var, mutex, (DWORD)(timeout / 1e6)))
     return 0;
   if (GetLastError() != ERROR_TIMEOUT)
-    abort();
+    assert(0);
   return UV_ETIMEDOUT;
 }
 
@@ -469,7 +469,7 @@ int uv_key_create(uv_key_t* key) {
 
 void uv_key_delete(uv_key_t* key) {
   if (TlsFree(key->tls_index) == FALSE)
-    abort();
+    assert(0);
   key->tls_index = TLS_OUT_OF_INDEXES;
 }
 
@@ -480,7 +480,7 @@ void* uv_key_get(uv_key_t* key) {
   value = TlsGetValue(key->tls_index);
   if (value == NULL)
     if (GetLastError() != ERROR_SUCCESS)
-      abort();
+      assert(0);
 
   return value;
 }
@@ -488,5 +488,5 @@ void* uv_key_get(uv_key_t* key) {
 
 void uv_key_set(uv_key_t* key, void* value) {
   if (TlsSetValue(key->tls_index, value) == FALSE)
-    abort();
+    assert(0);
 }

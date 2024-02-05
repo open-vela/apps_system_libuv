@@ -143,7 +143,7 @@ void uv_close(uv_handle_t* handle, uv_close_cb cb) {
 
     default:
       /* Not supported */
-      abort();
+      assert(0);
   }
 }
 

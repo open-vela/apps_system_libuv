@@ -124,7 +124,7 @@ static void maybe_resize(uv__os390_epoll* lst, unsigned int len) {
   newlst = uv__reallocf(lst->items, newsize * sizeof(lst->items[0]));
 
   if (newlst == NULL)
-    abort();
+    assert(0);
   for (i = lst->size; i < newsize; ++i)
     newlst[i].fd = -1;
 
@@ -150,7 +150,7 @@ static void init_message_queue(uv__os390_epoll* lst) {
   /* initialize message queue */
   lst->msg_queue = msgget(IPC_PRIVATE, 0600 | IPC_CREAT);
   if (lst->msg_queue == -1)
-    abort();
+    assert(0);
 
   /*
      On z/OS, the message queue will be affiliated with the process only
@@ -159,11 +159,11 @@ static void init_message_queue(uv__os390_epoll* lst) {
   */
   msg.header = 1;
   if (msgsnd(lst->msg_queue, &msg, sizeof(msg.body), 0) != 0)
-    abort();
+    assert(0);
 
   /* Clean up the dummy message sent above */
   if (msgrcv(lst->msg_queue, &msg, sizeof(msg.body), 0, 0) != sizeof(msg.body))
-    abort();
+    assert(0);
 }
 
 
@@ -203,10 +203,10 @@ static void child_fork(void) {
 static void epoll_init(void) {
   uv__queue_init(&global_epoll_queue);
   if (uv_mutex_init(&global_epoll_lock))
-    abort();
+    assert(0);
 
   if (pthread_atfork(&before_fork, &after_fork, &child_fork))
-    abort();
+    assert(0);
 }
 
 
@@ -270,7 +270,7 @@ int epoll_ctl(uv__os390_epoll* lst,
     lst->items[fd].events = event->events;
     lst->items[fd].revents = 0;
   } else
-    abort();
+    assert(0);
 
   uv_mutex_unlock(&global_epoll_lock);
   return 0;

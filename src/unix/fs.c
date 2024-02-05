@@ -367,7 +367,7 @@ static int uv__fs_mkstemp(uv_fs_t* req) {
   if (r >= 0 && uv__cloexec(r, 1) != 0) {
     r = uv__close(r);
     if (r != 0)
-      abort();
+      assert(0);
     r = -1;
   }
 
@@ -398,7 +398,7 @@ static ssize_t uv__fs_open(uv_fs_t* req) {
   if (r >= 0 && uv__cloexec(r, 1) != 0) {
     r = uv__close(r);
     if (r != 0)
-      abort();
+      assert(0);
     r = -1;
   }
 
@@ -1174,7 +1174,7 @@ static ssize_t uv__fs_write(uv_fs_t* req) {
   static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
   if (pthread_mutex_lock(&lock))
-    abort();
+    assert(0);
 #endif
 
   if (req->off < 0) {
@@ -1214,7 +1214,7 @@ static ssize_t uv__fs_write(uv_fs_t* req) {
 done:
 #if defined(__APPLE__)
   if (pthread_mutex_unlock(&lock))
-    abort();
+    assert(0);
 #endif
 
   return r;
@@ -1698,7 +1698,7 @@ static void uv__fs_work(struct uv__work* w) {
     X(UNLINK, unlink(req->path));
     X(UTIME, uv__fs_utime(req));
     X(WRITE, uv__fs_write_all(req));
-    default: abort();
+    default: assert(0);
     }
 #undef X
   } while (r == -1 && errno == EINTR && retry_on_eintr);

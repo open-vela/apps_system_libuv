@@ -630,10 +630,10 @@ static int uv__fsevents_loop_init(uv_loop_t* loop) {
   }
 
   if (pthread_attr_init(&attr))
-    abort();
+    assert(0);
 
   if (pthread_attr_setstacksize(&attr, uv__thread_stack_size()))
-    abort();
+    assert(0);
 
   loop->cf_state = state;
 
@@ -641,7 +641,7 @@ static int uv__fsevents_loop_init(uv_loop_t* loop) {
   err = UV__ERR(pthread_create(&loop->cf_thread, &attr, uv__cf_loop_runner, loop));
 
   if (pthread_attr_destroy(&attr))
-    abort();
+    assert(0);
 
   if (err)
     goto fail_thread_create;
@@ -681,7 +681,7 @@ void uv__fsevents_loop_delete(uv_loop_t* loop) {
     return;
 
   if (uv__cf_loop_signal(loop, NULL, kUVCFLoopSignalRegular) != 0)
-    abort();
+    assert(0);
 
   uv_thread_join(&loop->cf_thread);
   uv_sem_destroy(&loop->cf_sem);

@@ -194,6 +194,7 @@ static int uv__process_child_spawn(const uv_process_options_t* options,
 
   posix_spawn_file_actions_init(&file_actions);
   posix_spawnattr_init(&attr);
+  posix_spawnattr_setstacksize(&attr, CONFIG_LIBUV_THREAD_STACKSIZE);
 
   /* Reset signal disposition and mask */
   flags = POSIX_SPAWN_SETSIGDEF | POSIX_SPAWN_SETSIGMASK;

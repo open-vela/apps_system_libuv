@@ -115,9 +115,31 @@ int uv_cpu_info(uv_cpu_info_t** cpu_infos, int* count) {
   return 0;
 }
 
+#ifndef CONFIG_LIBC_DLFCN
+int uv_dlopen(const char* filename, uv_lib_t* lib) {
+  return UV_ENOSYS;
+}
+
+void uv_dlclose(uv_lib_t* lib) {
+}
+
+int uv_dlsym(uv_lib_t* lib, const char* name, void** ptr) {
+  return UV_ENOSYS;
+}
+
+const char* uv_dlerror(const uv_lib_t* lib) {
+  return "dlopen() is not supported on this platform";
+}
+#endif
+
 #ifndef CONFIG_NETDEV_IFINDEX
 unsigned int if_nametoindex(const char *ifname) {
   return 0;
+}
+
+FAR char *if_indextoname(unsigned int ifindex, char *ifname)
+{
+  return NULL;
 }
 
 int uv_interface_addresses(uv_interface_address_t** addresses, int* count) {

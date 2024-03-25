@@ -60,6 +60,10 @@ struct uv__stream_select_s {
 };
 #endif /* defined(__APPLE__) */
 
+#ifndef DEF_STREAM_READ_BUF_SIZE
+# define DEF_STREAM_READ_BUF_SIZE (64 * 1024)
+#endif
+
 union uv__cmsg {
   struct cmsghdr hdr;
   /* This cannot be larger because of the IBMi PASE limitation that
@@ -1044,7 +1048,7 @@ static void uv__read(uv_stream_t* stream) {
     assert(stream->alloc_cb != NULL);
 
     buf = uv_buf_init(NULL, 0);
-    stream->alloc_cb((uv_handle_t*)stream, 64 * 1024, &buf);
+    stream->alloc_cb((uv_handle_t*)stream, DEF_STREAM_READ_BUF_SIZE, &buf);
     if (buf.base == NULL || buf.len == 0) {
       /* User indicates it can't or won't handle the read. */
       stream->read_cb(stream, UV_ENOBUFS, &buf);

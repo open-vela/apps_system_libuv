@@ -360,3 +360,25 @@ uv__global_t* uv__global_get(void) {
   ASSERT(global != NULL);
   return global;
 }
+
+#ifndef CONFIG_FS_NOTIFY
+int inotify_init(void)
+{
+  return UV_ENOTSUP;
+}
+
+int inotify_init1(int flags)
+{
+  return UV_ENOTSUP;
+}
+
+int inotify_add_watch(int fd, FAR const char *pathname, uint32_t mask)
+{
+  return UV_ENOTSUP;
+}
+
+int inotify_rm_watch(int fd, int wd)
+{
+  return UV_ENOTSUP;
+}
+#endif

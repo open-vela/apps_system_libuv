@@ -115,6 +115,23 @@ int uv_cpu_info(uv_cpu_info_t** cpu_infos, int* count) {
   return 0;
 }
 
+#ifndef CONFIG_PSEUDOFS_SOFTLINKS
+int symlink(const char *path1, const char *path2)
+{
+  return ERROR;
+}
+
+ssize_t readlink(const char *path, char *buf, size_t bufsize)
+{
+  return ERROR;
+}
+
+int link(const char *path1, const char *path2)
+{
+  return ERROR;
+}
+#endif
+
 #ifndef CONFIG_LIBC_DLFCN
 int uv_dlopen(const char* filename, uv_lib_t* lib) {
   return UV_ENOSYS;

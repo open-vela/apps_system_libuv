@@ -107,6 +107,12 @@ int uv_uptime(double* uptime) {
 
 int uv_cpu_info(uv_cpu_info_t** cpu_infos, int* count) {
   *count = sysconf(_SC_NPROCESSORS_ONLN);
+
+  /* sysconf returns -1 on failure, check it before allocating memory */
+  if (*count == -1) {
+    return UV_ENOSYS;
+  }
+
   *cpu_infos = uv__calloc(*count, sizeof(uv_cpu_info_t));
   if (!*cpu_infos) {
     return UV_ENOMEM;

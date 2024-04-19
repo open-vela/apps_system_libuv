@@ -66,13 +66,18 @@ struct uv__stream_select_s {
 
 union uv__cmsg {
   struct cmsghdr hdr;
+#ifdef __NuttX__
+  /* Only one fd(int) is sent at a time */
+  char pad[sizeof(struct cmsghdr) + sizeof(int)];
+#else
   /* This cannot be larger because of the IBMi PASE limitation that
    * the total size of control messages cannot exceed 256 bytes.
    */
   char pad[256];
+#endif
 };
 
-STATIC_ASSERT(256 == sizeof(union uv__cmsg));
+STATIC_ASSERT(256 >= sizeof(union uv__cmsg));
 
 static void uv__stream_connect(uv_stream_t*);
 static void uv__write(uv_stream_t* stream);

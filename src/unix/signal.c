@@ -29,6 +29,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifdef __NuttX__
+#include <syslog.h>
+#endif
+
 #ifndef SA_RESTART
 # define SA_RESTART 0
 #endif
@@ -108,6 +112,13 @@ static int uv__signal_lock(void) {
     r = read(uv__signal_lock_pipefd[0], &data, sizeof data);
   } while (r < 0 && errno == EINTR);
 
+#ifdef __NuttX__
+    if (r < 0) {
+      syslog(LOG_ALERT, "signal lock pipe %d read failed: %d\n",
+        uv__signal_lock_pipefd[0], errno);
+    }
+#endif
+
   return (r < 0) ? -1 : 0;
 }
 
@@ -119,6 +130,13 @@ static int uv__signal_unlock(void) {
   do {
     r = write(uv__signal_lock_pipefd[1], &data, sizeof data);
   } while (r < 0 && errno == EINTR);
+
+#ifdef __NuttX__
+    if (r < 0) {
+      syslog(LOG_ALERT, "signal unlock pipe %d write failed: %d\n",
+        uv__signal_lock_pipefd[1], errno);
+    }
+#endif
 
   return (r < 0) ? -1 : 0;
 }

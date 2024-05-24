@@ -327,26 +327,33 @@ static void uv__global_free(void* global) {
   }
 }
 
+/* TLS index for uv_global_t */
+static int global_tls_index;
+
+/* Init once only by uv_once */
+static void uv__global_index_alloc(void) {
+  global_tls_index = task_tls_alloc(uv__global_free);
+
+  ASSERT(global_tls_index >= 0);
+}
+
 uv__global_t* uv__global_get(void) {
-  static int index = -1;
+  static uv_once_t once = UV_ONCE_INIT;
   uv__global_t* global = NULL;
-  pthread_once_t uv_once_init = UV_ONCE_INIT;
 
-  if (index < 0) {
-    index = task_tls_alloc(uv__global_free);
-  }
+  uv_once(&once, uv__global_index_alloc);
 
-  if (index >= 0) {
-    global = (uv__global_t*)task_tls_get_value(index);
-    if (global == NULL) {
-      global = (uv__global_t*)uv__calloc(1, sizeof(uv__global_t));
-      if (global) {
-          global->once = uv_once_init;
-          global->uv__signal_global_init_guard = uv_once_init;
-          global->uv__signal_lock_pipefd[0] = -1;
-          global->uv__signal_lock_pipefd[1] = -1;
-          task_tls_set_value(index, (uintptr_t)global);
-      }
+  global = (uv__global_t*)task_tls_get_value(global_tls_index);
+  if (global == NULL) {
+    global = (uv__global_t*)uv__calloc(1, sizeof(uv__global_t));
+    if (global) {
+      uv_once_t template = UV_ONCE_INIT;
+
+      global->once = template;
+      global->uv__signal_global_init_guard = template;
+      global->uv__signal_lock_pipefd[0] = -1;
+      global->uv__signal_lock_pipefd[1] = -1;
+      task_tls_set_value(global_tls_index, (uintptr_t)global);
     }
   }
 

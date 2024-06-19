@@ -848,12 +848,20 @@ uv_loop_t* uv_loop_new(void) {
 }
 
 
+int uv_loop_is_close(uv_loop_t* loop) {
+  return loop->close_flag;
+}
+
+
 int uv_loop_close(uv_loop_t* loop) {
   struct uv__queue* q;
   uv_handle_t* h;
 #ifndef NDEBUG
   void* saved_data;
 #endif
+
+  /* set close flag */
+  loop->close_flag = 1;
 
   if (uv__has_active_reqs(loop))
     return UV_EBUSY;

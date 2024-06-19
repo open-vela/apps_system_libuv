@@ -284,6 +284,7 @@ int uv_loop_init(uv_loop_t* loop) {
 
   loop->timer_counter = 0;
   loop->stop_flag = 0;
+  loop->close_flag = 0;
 
   err = uv_mutex_init(&loop->wq_mutex);
   if (err)

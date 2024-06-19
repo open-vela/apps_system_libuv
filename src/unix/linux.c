@@ -705,7 +705,21 @@ void uv__platform_invalidate_fd(uv_loop_t* loop, int fd) {
   memset(&dummy, 0, sizeof(dummy));
 
   if (inv == NULL) {
-    epoll_ctl(loop->backend_fd, EPOLL_CTL_DEL, fd, &dummy);
+    struct uv__queue* q;
+    unsigned int events = 0;
+
+    if (uv__queue_empty(&loop->watchers[fd])) {
+      epoll_ctl(loop->backend_fd, EPOLL_CTL_DEL, fd, &dummy);
+    } else {
+      uv__queue_foreach(q, &loop->watchers[fd]) {
+        uv__io_t* curr = uv__queue_data(q, uv__io_t, io_queue);
+        events |= curr->pevents;
+      }
+
+      dummy.events = events;
+      dummy.data.fd = fd;
+      epoll_ctl(loop->backend_fd, EPOLL_CTL_MOD, fd, &dummy);
+    }
   } else {
     uv__epoll_ctl_prep(loop->backend_fd,
                        &lfields->ctl,
@@ -726,6 +740,9 @@ int uv__io_check_fd(uv_loop_t* loop, int fd) {
   e.data.fd = -1;
 
   rc = 0;
+  if (!uv__queue_empty(&loop->watchers[fd]))
+    return rc;
+
   if (epoll_ctl(loop->backend_fd, EPOLL_CTL_ADD, fd, &e))
     if (errno != EEXIST)
       rc = UV__ERR(errno);
@@ -1370,6 +1387,8 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
     uv__queue_foreach(nq, &loop->watchers[w->fd]) {
       uv__io_t* curr = uv__queue_data(nq, uv__io_t, io_queue);
       e.events |= curr->pevents;
+      if (curr != w)
+        op = EPOLL_CTL_MOD;
     }
 
     e.data.fd = w->fd;

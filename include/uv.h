@@ -288,6 +288,7 @@ UV_EXTERN int uv_replace_allocator(uv_malloc_func malloc_func,
 UV_EXTERN uv_loop_t* uv_default_loop(void);
 UV_EXTERN int uv_loop_init(uv_loop_t* loop);
 UV_EXTERN int uv_loop_close(uv_loop_t* loop);
+UV_EXTERN int uv_loop_is_close(uv_loop_t* loop);
 /*
  * NOTE:
  *  This function is DEPRECATED, users should
@@ -1897,6 +1898,8 @@ struct uv_loop_s {
   void* internal_fields;
   /* Internal flag to signal loop stop. */
   unsigned int stop_flag;
+  /* Internal flag to signal loop close. */
+  unsigned int close_flag;
   UV_LOOP_PRIVATE_FIELDS
 };
 

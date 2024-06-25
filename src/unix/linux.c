@@ -708,6 +708,9 @@ void uv__platform_invalidate_fd(uv_loop_t* loop, int fd) {
     struct uv__queue* q;
     unsigned int events = 0;
 
+    if (fd >= loop->nwatchers)
+      return;
+
     if (uv__queue_empty(&loop->watchers[fd])) {
       epoll_ctl(loop->backend_fd, EPOLL_CTL_DEL, fd, &dummy);
     } else {
@@ -740,7 +743,7 @@ int uv__io_check_fd(uv_loop_t* loop, int fd) {
   e.data.fd = -1;
 
   rc = 0;
-  if (!uv__queue_empty(&loop->watchers[fd]))
+  if (fd < loop->nwatchers && !uv__queue_empty(&loop->watchers[fd]))
     return rc;
 
   if (epoll_ctl(loop->backend_fd, EPOLL_CTL_ADD, fd, &e))

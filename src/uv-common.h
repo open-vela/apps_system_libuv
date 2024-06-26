@@ -54,6 +54,7 @@ extern int snprintf(char*, size_t, const char*, ...);
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #define ARRAY_END(a)  ((a) + ARRAY_SIZE(a))
 
+#undef container_of
 #define container_of(ptr, type, member) \
   ((type *) ((char *) (ptr) - offsetof(type, member)))
 

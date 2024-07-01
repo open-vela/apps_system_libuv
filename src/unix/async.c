@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sched.h>  /* sched_yield() */
+#include <time.h>
 
 #ifdef __linux__
 #include <sys/eventfd.h>
@@ -94,6 +94,8 @@ static void uv__async_spin(uv_async_t* handle) {
   _Atomic int* busy;
   int i;
 
+  struct timespec ts = {0, 1};
+
   pending = (_Atomic int*) &handle->pending;
   busy = (_Atomic int*) &handle->u.fd;
 
@@ -113,11 +115,11 @@ static void uv__async_spin(uv_async_t* handle) {
       uv__cpu_relax();
     }
 
-    /* Yield the CPU. We may have preempted the other thread while it's
+    /* Release the CPU. We may have preempted the other thread while it's
      * inside the critical section and if it's running on the same CPU
      * as us, we'll just burn CPU cycles until the end of our time slice.
      */
-    sched_yield();
+    nanosleep(&ts, NULL);
   }
 }
 

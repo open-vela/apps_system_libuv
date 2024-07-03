@@ -1385,17 +1385,18 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
     if (w->events == 0)
       op = EPOLL_CTL_ADD;
 
-    w->events = w->pevents;
     e.events = w->pevents;
     uv__queue_foreach(nq, &loop->watchers[w->fd]) {
       uv__io_t* curr = uv__queue_data(nq, uv__io_t, io_queue);
       e.events |= curr->pevents;
-      if (curr != w)
+      if (curr != w && curr->events != 0) {
         op = EPOLL_CTL_MOD;
+      }
     }
 
-    e.data.fd = w->fd;
+    w->events = w->pevents;
 
+    e.data.fd = w->fd;
     uv__epoll_ctl_prep(epollfd, ctl, &prep, op, w->fd, &e);
   }
 

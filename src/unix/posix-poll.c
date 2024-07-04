@@ -204,16 +204,21 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
     w->events = w->pevents;
   }
 
+#ifndef __NuttX__
   /* Prepare a set of signals to block around poll(), if any.  */
   pset = NULL;
-#ifdef SIGPROF
+
   if (loop->flags & UV_LOOP_BLOCK_SIGPROF) {
     pset = &set;
     sigemptyset(pset);
     sigaddset(pset, SIGPROF);
   }
 #else
-  (void) set;
+
+  /* Block all signal during poll */
+  pset = &set;
+  sigfillset(pset);
+
 #endif
 
   user_timeout = 0;

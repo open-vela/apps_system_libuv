@@ -23,6 +23,9 @@
  * is what libuv uses elsewhere.
  */
 
+#include <nuttx/arch.h>
+#include <nuttx/tls.h>
+
 #include "internal.h"
 #include "uv.h"
 #include "uv-global.h"
@@ -34,7 +37,6 @@
 #include <sys/sysinfo.h>
 #include <unistd.h>
 
-#include <nuttx/tls.h>
 
 int uv_exepath(char* buffer, size_t* size) {
   int ret;

@@ -60,7 +60,7 @@
 # define TRY_PREADV 1
 #endif
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__NuttX__)
 # include <sys/sendfile.h>
 #endif
 
@@ -993,7 +993,7 @@ static ssize_t uv__fs_sendfile(uv_fs_t* req) {
   in_fd = req->flags;
   out_fd = req->file;
 
-#if defined(__linux__) || defined(__sun)
+#if defined(__linux__) || defined(__sun) || defined(__NuttX__)
   {
     off_t off;
     ssize_t r;

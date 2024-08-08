@@ -67,7 +67,11 @@
  * on the architecture.
  */
 static size_t uv__min_stack_size(void) {
+#ifdef DEF_THREADPOOL_STACKSIZE
+  static const size_t min = DEF_THREADPOOL_STACKSIZE;
+#else
   static const size_t min = 8192;
+#endif
 
 #ifdef PTHREAD_STACK_MIN  /* Not defined on NetBSD. */
   if (min < (size_t) PTHREAD_STACK_MIN)

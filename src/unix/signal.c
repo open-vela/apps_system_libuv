@@ -123,8 +123,7 @@ static int uv__signal_unlock(void) {
   return (r < 0) ? -1 : 0;
 }
 
-
-static void uv__signal_block_and_lock(sigset_t* saved_sigmask) {
+static void uv__signal_block(sigset_t* saved_sigmask) {
   sigset_t new_mask;
 
   if (sigfillset(&new_mask))
@@ -134,18 +133,24 @@ static void uv__signal_block_and_lock(sigset_t* saved_sigmask) {
   sigemptyset(saved_sigmask);
   if (pthread_sigmask(SIG_SETMASK, &new_mask, saved_sigmask))
     assert(0);
+}
 
+static void uv__signal_block_and_lock(sigset_t* saved_sigmask) {
+  uv__signal_block(saved_sigmask);
   if (uv__signal_lock())
     assert(0);
 }
 
+static void uv__signal_unblock(sigset_t* saved_sigmask) {
+  if (pthread_sigmask(SIG_SETMASK, saved_sigmask, NULL))
+    assert(0);
+}
 
 static void uv__signal_unlock_and_unblock(sigset_t* saved_sigmask) {
   if (uv__signal_unlock())
     assert(0);
 
-  if (pthread_sigmask(SIG_SETMASK, saved_sigmask, NULL))
-    assert(0);
+  uv__signal_unblock(saved_sigmask);
 }
 
 
@@ -407,6 +412,7 @@ static void uv__signal_event(uv_loop_t* loop,
                              unsigned int events) {
   uv__signal_msg_t* msg;
   uv_signal_t* handle;
+  sigset_t saved_sigmask;
   char buf[sizeof(uv__signal_msg_t) * 32];
   size_t bytes, end, i;
   int r;
@@ -415,7 +421,9 @@ static void uv__signal_event(uv_loop_t* loop,
   end = 0;
 
   do {
+    uv__signal_block(&saved_sigmask);
     r = read(loop->signal_pipefd[0], buf + bytes, sizeof(buf) - bytes);
+    uv__signal_unblock(&saved_sigmask);
 
     if (r == -1 && errno == EINTR)
       continue;

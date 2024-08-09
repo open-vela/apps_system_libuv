@@ -1278,11 +1278,18 @@ static ssize_t uv__fs_copyfile(uv_fs_t* req) {
       goto out;
     }
 
+#ifdef __NuttX__
+    /* Check if srcfd and dstfd refer to the same file */
+    if (strcmp(req->new_path, req->path) == 0) {
+      goto out;
+    }
+#else
     /* Check if srcfd and dstfd refer to the same file */
     if (src_statsbuf.st_dev == dst_statsbuf.st_dev &&
         src_statsbuf.st_ino == dst_statsbuf.st_ino) {
       goto out;
     }
+#endif
 
     /* Truncate the file in case the destination already existed. */
     if (ftruncate(dstfd, 0) != 0) {

@@ -147,7 +147,7 @@ int run_test(const char* test,
              int benchmark_output,
              int test_count) {
   char errmsg[1024] = "";
-  process_info_t processes[1024];
+  process_info_t processes[MAX_PROCESSES+1];
   process_info_t *main_proc;
   task_entry_t* task;
   int timeout_multiplier;

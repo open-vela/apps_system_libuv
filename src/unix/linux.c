@@ -1459,7 +1459,7 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
     }
 
     if (nfds == -1) {
-      if (errno != EINTR)
+      if (errno != EINTR && errno != EAGAIN)
         assert(0);
 
       if (reset_timeout != 0) {

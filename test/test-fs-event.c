@@ -412,9 +412,12 @@ TEST_IMPL(fs_event_watch_dir) {
 
   /* Setup */
   fs_event_unlink_files(NULL);
-  remove("watch_dir/file2");
-  remove("watch_dir/file1");
-  remove("watch_dir/");
+  r = remove("watch_dir/file2");
+  ASSERT(r == 0);
+  r = remove("watch_dir/file1");
+  ASSERT(r == 0);
+  r = remove("watch_dir/");
+  ASSERT(r == 0);
   create_dir("watch_dir");
 
   r = uv_fs_event_init(loop, &fs_event);
@@ -457,10 +460,14 @@ TEST_IMPL(fs_event_watch_dir_recursive) {
   /* Setup */
   loop = uv_default_loop();
   fs_event_unlink_files(NULL);
-  remove("watch_dir/file2");
-  remove("watch_dir/file1");
-  remove("watch_dir/subdir");
-  remove("watch_dir/");
+  r = remove("watch_dir/file2");
+  ASSERT(r == 0);
+  r = remove("watch_dir/file1");
+  ASSERT(r == 0);
+  r = remove("watch_dir/subdir");
+  ASSERT(r == 0);
+  r = remove("watch_dir/");
+  ASSERT(r == 0);
   create_dir("watch_dir");
   create_dir("watch_dir/subdir");
 
@@ -521,8 +528,10 @@ TEST_IMPL(fs_event_watch_dir_short_path) {
 
   /* Setup */
   loop = uv_default_loop();
-  remove("watch_dir/file1");
-  remove("watch_dir/");
+  r = remove("watch_dir/file1");
+  ASSERT(r == 0);
+  r = remove("watch_dir/");
+  ASSERT(r == 0);
   create_dir("watch_dir");
   create_file("watch_dir/file1");
 
@@ -574,9 +583,12 @@ TEST_IMPL(fs_event_watch_file) {
   close_cb_called = 0;
 
   /* Setup */
-  remove("watch_dir/file2");
-  remove("watch_dir/file1");
-  remove("watch_dir/");
+  r = remove("watch_dir/file2");
+  ASSERT(r == 0);
+  r = remove("watch_dir/file1");
+  ASSERT(r == 0);
+  r = remove("watch_dir/");
+  ASSERT(r == 0);
   create_dir("watch_dir");
   create_file("watch_dir/file1");
   create_file("watch_dir/file2");
@@ -622,9 +634,12 @@ TEST_IMPL(fs_event_watch_file_exact_path) {
   timer_cb_exact_called = 0;
 
   /* Setup */
-  remove("watch_dir/file.js");
-  remove("watch_dir/file.jsx");
-  remove("watch_dir/");
+  r = remove("watch_dir/file.js");
+  ASSERT(r == 0);
+  r = remove("watch_dir/file.jsx");
+  ASSERT(r == 0);
+  r = remove("watch_dir/");
+  ASSERT(r == 0);
   create_dir("watch_dir");
   create_file("watch_dir/file.js");
   create_file("watch_dir/file.jsx");
@@ -667,6 +682,7 @@ TEST_IMPL(fs_event_watch_file_twice) {
   uv_fs_event_t watchers[2];
   uv_timer_t timer;
   uv_loop_t* loop;
+  int r;
 
   create_dir("test");
   create_dir("test/fixtures");
@@ -683,9 +699,12 @@ TEST_IMPL(fs_event_watch_file_twice) {
   ASSERT(0 == uv_timer_start(&timer, timer_cb_watch_twice, 10, 0));
   ASSERT(0 == uv_run(loop, UV_RUN_DEFAULT));
 
-  remove("test/fixtures/empty_file");
-  remove("test/fixtures");
-  remove("test");
+  r = remove("test/fixtures/empty_file");
+  ASSERT(r == 0);
+  r = remove("test/fixtures");
+  ASSERT(r == 0);
+  r = remove("test");
+  ASSERT(r == 0);
 
   MAKE_VALGRIND_HAPPY(loop);
   return 0;
@@ -705,7 +724,8 @@ TEST_IMPL(fs_event_watch_file_current_dir) {
   close_cb_called = 0;
 
   /* Setup */
-  remove("watch_file");
+  r = remove("watch_file");
+  ASSERT(r == 0);
   create_file("watch_file");
 #if defined(__APPLE__) && !defined(MAC_OS_X_VERSION_10_12)
   /* Empirically, kevent seems to (sometimes) report the preceding
@@ -788,8 +808,10 @@ TEST_IMPL(fs_event_no_callback_after_close) {
   close_cb_called = 0;
 
   /* Setup */
-  remove("watch_dir/file1");
-  remove("watch_dir/");
+  r = remove("watch_dir/file1");
+  ASSERT(r == 0);
+  r =remove("watch_dir/");
+  ASSERT(r == 0);
   create_dir("watch_dir");
   create_file("watch_dir/file1");
 
@@ -829,8 +851,10 @@ TEST_IMPL(fs_event_no_callback_on_close) {
   close_cb_called = 0;
 
   /* Setup */
-  remove("watch_dir/file1");
-  remove("watch_dir/");
+  r = remove("watch_dir/file1");
+  ASSERT(r == 0);
+  r = remove("watch_dir/");
+  ASSERT(r == 0);
   create_dir("watch_dir");
   create_file("watch_dir/file1");
 
@@ -1129,7 +1153,6 @@ static void fs_event_error_report_close_cb(uv_handle_t* handle) {
 
   /* handle is allocated on-stack, no need to free it */
 }
-
 
 TEST_IMPL(fs_event_error_reporting) {
   unsigned int i;

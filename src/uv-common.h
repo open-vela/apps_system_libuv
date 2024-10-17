@@ -77,7 +77,7 @@ extern int snprintf(char*, size_t, const char*, ...);
 #define UV__UDP_DGRAM_MAXSIZE (64 * 1024)
 
 /* Handle flags. Some flags are specific to Windows or UNIX. */
-enum {
+enum uv_handle_flag {
   /* Used by all handles. */
   UV_HANDLE_CLOSING                     = 0x00000001,
   UV_HANDLE_CLOSED                      = 0x00000002,

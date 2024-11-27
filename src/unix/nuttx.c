@@ -157,6 +157,52 @@ const char* uv_dlerror(const uv_lib_t* lib) {
 }
 #endif
 
+/* This section is used with LIBC_NETDB disabled, which means the
+ * getaddrinfo.c/getnameinfo.c will not be compiled.
+ *
+ * Use the dummy implementation for better footprint.
+ */
+
+#ifndef CONFIG_LIBC_NETDB
+int uv_getaddrinfo(uv_loop_t* loop,
+                   uv_getaddrinfo_t* req,
+                   uv_getaddrinfo_cb getaddrinfo_cb,
+                   const char* node,
+                   const char* service,
+                   const struct addrinfo* hints) {
+  return UV_ENOTSUP;
+}
+
+void uv_freeaddrinfo(struct addrinfo* ai) {
+  ASSERT(false);
+}
+
+int uv_getnameinfo(uv_loop_t* loop,
+                   uv_getnameinfo_t* req,
+                   uv_getnameinfo_cb getnameinfo_cb,
+                   const struct sockaddr* addr,
+                   int flags) {
+  return UV_ENOTSUP;
+}
+
+int uv_if_indextoname(unsigned int ifindex,
+                      char* buffer,
+                      size_t* size) {
+  return UV_ENOTSUP;
+}
+
+int uv_if_indextoiid(unsigned int ifindex,
+                     char* buffer,
+                     size_t* size) {
+  return UV_ENOTSUP;
+}
+#endif
+
+/* This section is used with LIBC_NETDB enabled but NETDEV_IFINDEX disabled,
+ * if_nametoindex/if_indextoname called from uv-common.c, so should provide
+ * dummy implementation for them.
+ */
+
 #ifndef CONFIG_NETDEV_IFINDEX
 unsigned int if_nametoindex(const char *ifname) {
   return 0;
@@ -286,6 +332,50 @@ int shutdown(int sockfd, int how) {
 #endif
 
 #ifndef CONFIG_NET_TCP
+int uv_socketpair(int type,
+                  int protocol,
+                  uv_os_sock_t socket_vector[2],
+                  int flags0,
+                  int flags1) {
+  return UV_ENOTSUP;
+}
+
+int uv_tcp_init(uv_loop_t* loop, uv_tcp_t* handle) {
+  return UV_ENOTSUP;
+}
+
+int uv_tcp_init_ex(uv_loop_t* loop, uv_tcp_t* handle, unsigned int flags) {
+  return UV_ENOTSUP;
+}
+
+int uv_tcp_open(uv_tcp_t* handle, uv_os_sock_t sock) {
+  return UV_ENOTSUP;
+}
+
+int uv_tcp_nodelay(uv_tcp_t* handle, int on) {
+  return UV_ENOTSUP;
+}
+
+int uv_tcp_keepalive(uv_tcp_t* handle, int enable, unsigned int delay) {
+  return UV_ENOTSUP;
+}
+
+int uv_tcp_getsockname(const uv_tcp_t* handle,
+                       struct sockaddr* name,
+                       int* namelen) {
+  return UV_ENOTSUP;
+}
+
+int uv_tcp_getpeername(const uv_tcp_t* handle,
+                       struct sockaddr* name,
+                       int* namelen) {
+  return UV_ENOTSUP;
+}
+
+int uv_tcp_close_reset(uv_tcp_t* handle, uv_close_cb close_cb) {
+  return UV_ENOTSUP;
+}
+
 int uv__tcp_listen(uv_tcp_t* tcp, int backlog, uv_connection_cb cb) {
   return UV_ENOTSUP;
 }
@@ -294,6 +384,21 @@ void uv__tcp_close(uv_tcp_t* handle) {
 }
 
 int uv__tcp_nodelay(int fd, int on) {
+  return UV_ENOTSUP;
+}
+
+int uv__tcp_connect(uv_connect_t* req,
+                    uv_tcp_t* handle,
+                    const struct sockaddr* addr,
+                    unsigned int addrlen,
+                    uv_connect_cb cb) {
+  return UV_ENOTSUP;
+}
+
+int uv__tcp_bind(uv_tcp_t* tcp,
+                 const struct sockaddr* addr,
+                 unsigned int addrlen,
+                 unsigned int flags) {
   return UV_ENOTSUP;
 }
 
@@ -307,10 +412,112 @@ int uv_udp_open(uv_udp_t* handle, uv_os_sock_t sock) {
   return UV_ENOTSUP;
 }
 
+int uv_udp_getsockname(const uv_udp_t* handle,
+                       struct sockaddr* name,
+                       int* namelen) {
+  return UV_ENOTSUP;
+}
+
+int uv__udp_init_ex(uv_loop_t* loop,
+                    uv_udp_t* handle,
+                    unsigned flags,
+                    int domain) {
+  return UV_ENOTSUP;
+}
+
+int uv__udp_bind(uv_udp_t* handle,
+                 const struct sockaddr* addr,
+                 unsigned int addrlen,
+                 unsigned int flags) {
+  return UV_ENOTSUP;
+}
+
+int uv__udp_connect(uv_udp_t* handle,
+                    const struct sockaddr* addr,
+                    unsigned int addrlen) {
+  return UV_ENOTSUP;
+}
+
+int uv__udp_send(uv_udp_send_t* req,
+                 uv_udp_t* handle,
+                 const uv_buf_t bufs[],
+                 unsigned int nbufs,
+                 const struct sockaddr* addr,
+                 unsigned int addrlen,
+                 uv_udp_send_cb send_cb) {
+  return UV_ENOTSUP;
+}
+
+int uv__udp_try_send(uv_udp_t* handle,
+                     const uv_buf_t bufs[],
+                     unsigned int nbufs,
+                     const struct sockaddr* addr,
+                     unsigned int addrlen) {
+  return UV_ENOTSUP;
+}
+
+int uv__udp_recv_start(uv_udp_t* handle, uv_alloc_cb alloccb,
+                       uv_udp_recv_cb recv_cb) {
+  return UV_ENOTSUP;
+}
+
+int uv__udp_recv_stop(uv_udp_t* handle) {
+  return UV_ENOTSUP;
+}
+
+int uv__udp_disconnect(uv_udp_t* handle) {
+  return UV_ENOTSUP;
+}
+
 void uv__udp_close(uv_udp_t* handle) {
 }
 
 void uv__udp_finish_close(uv_udp_t* handle) {
+}
+
+int uv_udp_set_broadcast(uv_udp_t* handle, int on) {
+  return UV_ENOTSUP;
+}
+
+int uv_udp_set_ttl(uv_udp_t* handle, int ttl) {
+  return UV_ENOTSUP;
+}
+
+int uv_udp_set_multicast_loop(uv_udp_t* handle, int on) {
+  return UV_ENOTSUP;
+}
+
+int uv_udp_set_multicast_interface(uv_udp_t* handle, const char* interface_addr) {
+  return UV_ENOTSUP;
+}
+
+int uv_udp_set_multicast_ttl(uv_udp_t* handle, int ttl) {
+  return UV_ENOTSUP;
+}
+
+int uv_udp_set_membership(uv_udp_t* handle,
+                          const char* multicast_addr,
+                          const char* interface_addr,
+                          uv_membership membership) {
+  return UV_ENOTSUP;
+}
+
+int uv_udp_set_source_membership(uv_udp_t* handle,
+                                 const char* multicast_addr,
+                                 const char* interface_addr,
+                                 const char* source_addr,
+                                 uv_membership membership) {
+  return UV_ENOTSUP;
+}
+
+int uv_udp_getpeername(const uv_udp_t* handle,
+                       struct sockaddr* name,
+                       int* namelen) {
+  return UV_ENOTSUP;
+}
+
+int uv_udp_using_recvmmsg(const uv_udp_t* handle) {
+  return UV_ENOTSUP;
 }
 #endif
 

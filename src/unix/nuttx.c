@@ -591,3 +591,15 @@ int inotify_rm_watch(int fd, int wd)
   return UV_ENOTSUP;
 }
 #endif
+
+#ifndef CONFIG_LIBC_EXECFUNCS
+int uv__process_init(uv_loop_t* loop)
+{
+  return OK;
+}
+
+void uv__process_close(uv_process_t* handle)
+{
+  DEBUGASSERT(0);
+}
+#endif

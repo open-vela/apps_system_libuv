@@ -96,6 +96,9 @@ TEST_IMPL(getnameinfo_basic_ip6) {
 #if defined(__QEMU__)
   RETURN_SKIP("Test does not currently work in QEMU");
 #endif
+#ifndef CONFIG_NET_IPv6
+  RETURN_SKIP("Test depends on the CONFIG_NET_IPv6 configuration");
+#endif
   
   int r;
 

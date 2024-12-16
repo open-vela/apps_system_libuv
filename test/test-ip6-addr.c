@@ -36,6 +36,9 @@ TEST_IMPL(ip6_addr_link_local) {
   /* FIXME: Does Cygwin support this?  */
   RETURN_SKIP("FIXME: This test needs more investigation on Cygwin");
 #endif
+#ifndef CONFIG_NET_IPv6
+  RETURN_SKIP("Test depends on the CONFIG_NET_IPv6 configuration");
+#endif
   char string_address[INET6_ADDRSTRLEN];
   uv_interface_address_t* addresses;
   uv_interface_address_t* address;

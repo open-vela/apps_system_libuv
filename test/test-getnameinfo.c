@@ -99,7 +99,6 @@ TEST_IMPL(getnameinfo_basic_ip6) {
 #ifndef CONFIG_NET_IPv6
   RETURN_SKIP("Test depends on the CONFIG_NET_IPv6 configuration");
 #endif
-  
   int r;
 
   r = uv_ip6_addr(address_ip6, port, &addr6);

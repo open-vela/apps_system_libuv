@@ -21,6 +21,13 @@
 
 #include "uv.h"
 
+#if !defined(__NuttX__) || (defined(CONFIG_NET_TCP) && !defined(CONFIG_NET_TCP_NO_STACK))
+#define HAVE_TCP
+#endif
+#if !defined(__NuttX__) || (defined(CONFIG_NET_UDP) && !defined(CONFIG_NET_UDP_NO_STACK))
+#define HAVE_UDP
+#endif
+
 TEST_DECLARE   (platform_output)
 TEST_DECLARE   (close_order)
 TEST_DECLARE   (run_once)
@@ -77,6 +84,7 @@ TEST_DECLARE   (tty_file)
 TEST_DECLARE   (tty_pty)
 TEST_DECLARE   (stdio_over_pipes)
 TEST_DECLARE   (stdio_emulate_iocp)
+#ifdef HAVE_TCP
 TEST_DECLARE   (ip6_pton)
 TEST_DECLARE   (ip6_sin6_len)
 TEST_DECLARE   (connect_unspecified)
@@ -158,6 +166,9 @@ TEST_DECLARE   (tcp_bind6_error_fault)
 TEST_DECLARE   (tcp_bind6_error_inval)
 TEST_DECLARE   (tcp_bind6_localhost_ok)
 TEST_DECLARE   (tcp_write_ready)
+#endif /* HAVE_TCP */
+
+#ifdef HAVE_UDP
 TEST_DECLARE   (udp_alloc_cb_fail)
 TEST_DECLARE   (udp_bind)
 TEST_DECLARE   (udp_bind_reuseaddr)
@@ -192,6 +203,8 @@ TEST_DECLARE   (udp_send_unix)
 #endif
 TEST_DECLARE   (udp_sendmmsg_error)
 TEST_DECLARE   (udp_try_send)
+#endif /* HAVE_UDP */
+
 TEST_DECLARE   (pipe_bind_error_addrinuse)
 TEST_DECLARE   (pipe_bind_error_addrnotavail)
 TEST_DECLARE   (pipe_bind_error_inval)
@@ -209,6 +222,7 @@ TEST_DECLARE   (pipe_getsockname_blocking)
 TEST_DECLARE   (pipe_pending_instances)
 TEST_DECLARE   (pipe_sendmsg)
 TEST_DECLARE   (pipe_server_close)
+#ifdef HAVE_TCP
 TEST_DECLARE   (connection_fail)
 TEST_DECLARE   (connection_fail_doesnt_auto_close)
 TEST_DECLARE   (shutdown_close_tcp)
@@ -217,6 +231,8 @@ TEST_DECLARE   (shutdown_eof)
 TEST_DECLARE   (shutdown_simultaneous)
 TEST_DECLARE   (shutdown_twice)
 TEST_DECLARE   (callback_stack)
+#endif /* HAVE_TCP */
+
 TEST_DECLARE   (env_vars)
 TEST_DECLARE   (error_message)
 TEST_DECLARE   (sys_error)
@@ -240,7 +256,10 @@ TEST_DECLARE   (idle_check)
 TEST_DECLARE   (loop_handles)
 TEST_DECLARE   (get_loadavg)
 TEST_DECLARE   (walk_handles)
+#ifdef HAVE_UDP
 TEST_DECLARE   (watcher_cross_stop)
+#endif /* HAVE_UDP */
+
 TEST_DECLARE   (ref)
 TEST_DECLARE   (idle_ref)
 TEST_DECLARE   (async_ref)
@@ -251,14 +270,20 @@ TEST_DECLARE   (timer_ref)
 TEST_DECLARE   (timer_ref2)
 TEST_DECLARE   (fs_event_ref)
 TEST_DECLARE   (fs_poll_ref)
+#ifdef HAVE_TCP
 TEST_DECLARE   (tcp_ref)
 TEST_DECLARE   (tcp_ref2)
 TEST_DECLARE   (tcp_ref2b)
 TEST_DECLARE   (tcp_ref3)
 TEST_DECLARE   (tcp_ref4)
+#endif /* HAVE_TCP */
+
+#ifdef HAVE_UDP
 TEST_DECLARE   (udp_ref)
 TEST_DECLARE   (udp_ref2)
 TEST_DECLARE   (udp_ref3)
+#endif /* HAVE_UDP */
+
 TEST_DECLARE   (pipe_ref)
 TEST_DECLARE   (pipe_ref2)
 TEST_DECLARE   (pipe_ref3)
@@ -285,11 +310,14 @@ TEST_DECLARE   (get_memory)
 TEST_DECLARE   (get_passwd)
 TEST_DECLARE   (get_passwd2)
 TEST_DECLARE   (get_group)
+#if defined(HAVE_TCP) && defined(HAVE_UDP)
 TEST_DECLARE   (handle_fileno)
+#endif
 TEST_DECLARE   (homedir)
 TEST_DECLARE   (tmpdir)
 TEST_DECLARE   (hrtime)
 TEST_DECLARE   (clock_gettime)
+#ifdef HAVE_TCP
 TEST_DECLARE   (getaddrinfo_fail)
 TEST_DECLARE   (getaddrinfo_fail_sync)
 TEST_DECLARE   (getaddrinfo_basic)
@@ -300,12 +328,19 @@ TEST_DECLARE   (getnameinfo_basic_ip4)
 TEST_DECLARE   (getnameinfo_basic_ip4_sync)
 TEST_DECLARE   (getnameinfo_basic_ip6)
 TEST_DECLARE   (getsockname_tcp)
+#endif /* HAVE_TCP */
+
+#ifdef HAVE_UDP
 TEST_DECLARE   (getsockname_udp)
+#endif /* HAVE_UDP */
+
 TEST_DECLARE   (gettimeofday)
 TEST_DECLARE   (test_macros)
 TEST_DECLARE   (fail_always)
 TEST_DECLARE   (pass_always)
+#if defined(HAVE_TCP) && defined(HAVE_UDP)
 TEST_DECLARE   (socket_buffer_size)
+#endif
 TEST_DECLARE   (spawn_fails)
 #ifndef _WIN32
 TEST_DECLARE   (spawn_fails_check_for_waitpid_cleanup)
@@ -470,6 +505,8 @@ TEST_DECLARE   (dlerror)
     !defined(__sun)
 TEST_DECLARE   (poll_oob)
 #endif
+
+#ifdef HAVE_TCP
 TEST_DECLARE   (poll_duplex)
 TEST_DECLARE   (poll_unidirectional)
 TEST_DECLARE   (poll_close)
@@ -488,6 +525,8 @@ TEST_DECLARE   (ip_name)
 
 TEST_DECLARE   (poll_close_doesnt_corrupt_stack)
 TEST_DECLARE   (poll_closesocket)
+#endif /* HAVE_TCP */
+
 TEST_DECLARE   (close_fd)
 TEST_DECLARE   (closed_fd_events)
 TEST_DECLARE   (spawn_fs_open)
@@ -531,10 +570,11 @@ TEST_DECLARE   (random_sync)
 TEST_DECLARE   (handle_type_name)
 TEST_DECLARE   (req_type_name)
 TEST_DECLARE   (getters_setters)
-
+#ifdef HAVE_TCP
 TEST_DECLARE   (not_writable_after_shutdown)
 TEST_DECLARE   (not_readable_nor_writable_on_read_error)
 TEST_DECLARE   (readable_on_eof)
+#endif /* HAVE_TCP */
 
 #ifndef _WIN32
 TEST_DECLARE  (fork_timer)
@@ -636,6 +676,7 @@ TASK_LIST_START
   TEST_ENTRY  (tty_pty)
   TEST_ENTRY  (stdio_over_pipes)
   TEST_ENTRY  (stdio_emulate_iocp)
+#ifdef HAVE_TCP
   TEST_ENTRY  (ip6_pton)
   TEST_ENTRY  (ip6_sin6_len)
   TEST_ENTRY  (connect_unspecified)
@@ -762,7 +803,9 @@ TASK_LIST_START
   TEST_ENTRY  (tcp_bind6_error_fault)
   TEST_ENTRY  (tcp_bind6_error_inval)
   TEST_ENTRY  (tcp_bind6_localhost_ok)
+#endif /* HAVE_TCP */
 
+#ifdef HAVE_UDP
   TEST_ENTRY  (udp_alloc_cb_fail)
   TEST_ENTRY  (udp_bind)
   TEST_ENTRY  (udp_bind_reuseaddr)
@@ -798,6 +841,7 @@ TASK_LIST_START
 #ifndef _WIN32
   TEST_ENTRY  (udp_send_unix)
 #endif
+#endif /* HAVE_UDP */
 
   TEST_ENTRY  (pipe_bind_error_addrinuse)
   TEST_ENTRY  (pipe_bind_error_addrnotavail)
@@ -812,7 +856,7 @@ TASK_LIST_START
   TEST_ENTRY  (pipe_getsockname_blocking)
   TEST_ENTRY  (pipe_pending_instances)
   TEST_ENTRY  (pipe_sendmsg)
-
+#ifdef HAVE_TCP
   TEST_ENTRY  (connection_fail)
   TEST_ENTRY  (connection_fail_doesnt_auto_close)
 
@@ -832,6 +876,7 @@ TASK_LIST_START
 
   TEST_ENTRY  (callback_stack)
   TEST_HELPER (callback_stack, tcp4_echo_server)
+#endif /* HAVE_TCP */
 
   TEST_ENTRY  (env_vars)
 
@@ -867,6 +912,7 @@ TASK_LIST_START
   TEST_ENTRY  (timer_ref)
   TEST_ENTRY  (timer_ref2)
   TEST_ENTRY  (fs_event_ref)
+#ifdef HAVE_TCP
   TEST_ENTRY  (tcp_ref)
   TEST_ENTRY  (tcp_ref2)
   TEST_ENTRY  (tcp_ref2b)
@@ -874,10 +920,15 @@ TASK_LIST_START
   TEST_HELPER (tcp_ref3, tcp4_echo_server)
   TEST_ENTRY  (tcp_ref4)
   TEST_HELPER (tcp_ref4, tcp4_echo_server)
+#endif /* HAVE_TCP */
+
+#ifdef HAVE_UDP
   TEST_ENTRY  (udp_ref)
   TEST_ENTRY  (udp_ref2)
   TEST_ENTRY  (udp_ref3)
   TEST_HELPER (udp_ref3, udp4_echo_server)
+#endif /* HAVE_UDP */
+
   TEST_ENTRY  (pipe_ref)
   TEST_ENTRY  (pipe_ref2)
   TEST_ENTRY  (pipe_ref3)
@@ -890,8 +941,9 @@ TASK_LIST_START
 
   TEST_ENTRY  (loop_handles)
   TEST_ENTRY  (walk_handles)
-
+#ifdef HAVE_UDP
   TEST_ENTRY  (watcher_cross_stop)
+#endif /* HAVE_UDP */
 
   TEST_ENTRY  (active)
 
@@ -916,9 +968,9 @@ TASK_LIST_START
   TEST_ENTRY  (get_group)
 
   TEST_ENTRY  (get_loadavg)
-
+#if defined(HAVE_TCP) && defined(HAVE_UDP)
   TEST_ENTRY  (handle_fileno)
-
+#endif
   TEST_ENTRY  (homedir)
 
   TEST_ENTRY  (tmpdir)
@@ -926,7 +978,7 @@ TASK_LIST_START
   TEST_ENTRY_CUSTOM (hrtime, 0, 0, 20000)
 
   TEST_ENTRY  (clock_gettime)
-
+#ifdef HAVE_TCP
   TEST_ENTRY_CUSTOM (getaddrinfo_fail, 0, 0, 10000)
   TEST_ENTRY_CUSTOM (getaddrinfo_fail_sync, 0, 0, 10000)
 
@@ -941,10 +993,14 @@ TASK_LIST_START
   TEST_ENTRY  (getnameinfo_basic_ip6)
 
   TEST_ENTRY  (getsockname_tcp)
+#endif /* HAVE_TCP */
+
+#ifdef HAVE_UDP
   TEST_ENTRY  (getsockname_udp)
+#endif /* HAVE_UDP */
 
   TEST_ENTRY  (gettimeofday)
-
+#ifdef HAVE_TCP
   TEST_ENTRY  (poll_duplex)
   TEST_ENTRY  (poll_unidirectional)
   TEST_ENTRY  (poll_close)
@@ -961,9 +1017,11 @@ TASK_LIST_START
   TEST_ENTRY  (poll_nested_kqueue)
 #endif
   TEST_ENTRY  (poll_multiple_handles)
+#endif /* HAVE_TCP */
 
+#if defined(HAVE_TCP) && defined(HAVE_UDP)
   TEST_ENTRY  (socket_buffer_size)
-
+#endif
   TEST_ENTRY  (spawn_fails)
 #ifndef _WIN32
   TEST_ENTRY  (spawn_fails_check_for_waitpid_cleanup)
@@ -1001,9 +1059,11 @@ TASK_LIST_START
   TEST_ENTRY  (fs_poll_close_request_stop_when_active)
   TEST_ENTRY  (kill)
   TEST_ENTRY  (kill_invalid_signum)
-
+#ifdef HAVE_TCP
   TEST_ENTRY  (poll_close_doesnt_corrupt_stack)
   TEST_ENTRY  (poll_closesocket)
+#endif /* HAVE_TCP */
+
   TEST_ENTRY  (close_fd)
   TEST_ENTRY  (closed_fd_events)
   TEST_ENTRY  (spawn_fs_open)
@@ -1158,9 +1218,11 @@ TASK_LIST_START
   TEST_ENTRY  (thread_equal)
   TEST_ENTRY  (thread_affinity)
   TEST_ENTRY  (dlerror)
+#ifdef HAVE_TCP
   TEST_ENTRY  (ip4_addr)
   TEST_ENTRY  (ip6_addr_link_local)
   TEST_ENTRY  (ip_name)
+#endif /* HAVE_TCP */
 
   TEST_ENTRY  (queue_foreach_delete)
 
@@ -1196,12 +1258,14 @@ TASK_LIST_START
   TEST_ENTRY  (idna_toascii)
 #endif
 
+#ifdef HAVE_TCP
   TEST_ENTRY    (not_writable_after_shutdown)
   TEST_HELPER   (not_writable_after_shutdown, tcp4_echo_server)
   TEST_ENTRY    (not_readable_nor_writable_on_read_error)
   TEST_HELPER   (not_readable_nor_writable_on_read_error, tcp4_echo_server)
   TEST_ENTRY    (readable_on_eof)
   TEST_HELPER   (readable_on_eof, tcp4_echo_server)
+#endif /* HAVE_TCP */
 
   TEST_ENTRY  (metrics_info_check)
   TEST_ENTRY  (metrics_pool_events)

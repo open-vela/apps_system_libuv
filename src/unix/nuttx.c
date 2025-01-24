@@ -521,6 +521,10 @@ int uv_udp_using_recvmmsg(const uv_udp_t* handle) {
 }
 #endif
 
+#if defined(CONFIG_BUILD_FLAT) || defined(CONFIG_BUILD_PROTECTED)
+
+/* Kernel build should use g_uv_common_global in uv-common.c */
+
 #if CONFIG_TLS_TASK_NELEM == 0
 #  error "libuv depends on CONFIG_TLS_TASK_NELEM, please enable it by menuconfig"
 #endif
@@ -569,6 +573,7 @@ uv__global_t* uv__global_get(void) {
   ASSERT(global != NULL);
   return global;
 }
+#endif
 
 #ifndef CONFIG_FS_NOTIFY
 int inotify_init(void)

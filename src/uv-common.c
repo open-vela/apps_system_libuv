@@ -1034,7 +1034,7 @@ uint64_t uv_metrics_idle_time(uv_loop_t* loop) {
 
 /* Add uv_global_get here since all system need it but NuttX */
 
-#ifndef __NuttX__
+#if !defined(__NuttX__) || defined(CONFIG_BUILD_KERNEL)
 #undef once
 #undef uv__signal_global_init_guard
 #undef uv__signal_lock_pipefd

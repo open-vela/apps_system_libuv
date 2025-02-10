@@ -233,7 +233,11 @@ int run_test(const char* test,
     goto out;
   }
 
+#ifndef SIMULATOR
   timeout_multiplier = 1;
+#else
+  timeout_multiplier = 10;
+#endif
 #ifndef _WIN32
   do {
     const char* var;

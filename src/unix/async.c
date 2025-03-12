@@ -270,7 +270,7 @@ void uv__async_stop(uv_loop_t* loop) {
     loop->async_wfd = -1;
   }
 
-  uv__io_stop(loop, &loop->async_io_watcher, POLLIN);
+  uv__io_close(loop, &loop->async_io_watcher);
   uv__close(loop->async_io_watcher.fd);
   loop->async_io_watcher.fd = -1;
 }

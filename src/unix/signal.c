@@ -299,6 +299,7 @@ void uv__signal_loop_cleanup(uv_loop_t* loop) {
   }
 
   if (loop->signal_pipefd[0] != -1) {
+    uv__io_close(loop, &loop->signal_io_watcher);
     uv__close(loop->signal_pipefd[0]);
     loop->signal_pipefd[0] = -1;
   }

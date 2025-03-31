@@ -345,7 +345,6 @@ TEST_IMPL(udp_send_unix) {
 
   uv_close((uv_handle_t*)&handle, NULL);
   uv_run(loop, UV_RUN_DEFAULT);
-  close(fd);
   unlink(TEST_PIPENAME);
 
   MAKE_VALGRIND_HAPPY(loop);

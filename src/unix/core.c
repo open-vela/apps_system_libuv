@@ -99,10 +99,6 @@ extern char** environ;
 # include <sanitizer/linux_syscall_hooks.h>
 #endif
 
-#if UV_HANDLE_BACKTRACE > 0
-#include <execinfo.h>
-#endif
-
 static void uv__run_pending(uv_loop_t* loop);
 
 /* Verify that uv_buf_t is ABI-compatible with struct iovec. */
@@ -348,6 +344,11 @@ static void uv__finish_close(uv_handle_t* handle) {
       assert(0);
       break;
   }
+
+#ifdef UV_HANDLE_BACKTRACE
+  backtrace_remove(handle->stack);
+  handle->stack = NULL;
+#endif
 
   uv__handle_unref(handle);
   uv__queue_remove(&handle->handle_queue);
@@ -1806,14 +1807,4 @@ unsigned int uv_available_parallelism(void) {
 
   return (unsigned) rc;
 #endif  /* __linux__ */
-}
-
-int uv__get_backtrace(void** frames, int frames_size) {
-  int ret = 0;
-#if UV_HANDLE_BACKTRACE > 0
-  ret = backtrace(frames, frames_size);
-  if(ret < frames_size)
-    frames[ret] = NULL;
-#endif
-  return ret;
 }

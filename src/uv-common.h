@@ -37,6 +37,10 @@
 #include "queue.h"
 #include "strscpy.h"
 
+#ifdef UV_HANDLE_BACKTRACE
+#include <execinfo.h>
+#endif
+
 #ifndef _MSC_VER
 # include <stdatomic.h>
 #endif
@@ -319,9 +323,12 @@ void uv__threadpool_cleanup(void);
 # define uv__handle_platform_init(h) ((h)->next_closing = NULL)
 #endif
 
-#if UV_HANDLE_BACKTRACE > 0
-#define uv__handle_backtrace_init(h)                                           \
-  uv__get_backtrace((h)->backtrace, UV_HANDLE_BACKTRACE)
+#ifdef UV_HANDLE_BACKTRACE
+#define uv__handle_backtrace_init(h)                                          \
+  do {                                                                        \
+    (h)->stack = backtrace_record(0);                                         \
+  }                                                                           \
+  while (0)
 #else
 #define uv__handle_backtrace_init(h)
 #endif

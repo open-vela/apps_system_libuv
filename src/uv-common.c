@@ -577,10 +577,17 @@ static void uv__print_handles(uv_loop_t* loop, int only_active, FILE* stream) {
             "I-"[!(h->flags & UV_HANDLE_INTERNAL)],
             type,
             (void*)h);
-#if UV_HANDLE_BACKTRACE > 0
+#ifdef UV_HANDLE_BACKTRACE
+    char tmp[BACKTRACE_BUFFER_SIZE(CONFIG_LIBC_BACKTRACE_DEPTH)] = "";
+    FAR void **stack;
+    int stacksize;
+
     fprintf(stream, " backtrace:");
-    for (int i = 0; i < UV_HANDLE_BACKTRACE && h->backtrace[i]; i++)
-      fprintf(stream, " %p", h->backtrace[i]);
+    stack = backtrace_get(h->stack, &stacksize);
+    if (stacksize) {
+      backtrace_format(tmp, sizeof(tmp), stack, stacksize);
+      fprintf(stream, " %s", tmp);
+    }
 #endif
     fprintf(stream, "\n");
   }

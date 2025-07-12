@@ -458,8 +458,8 @@ struct uv_shutdown_s {
   UV_SHUTDOWN_PRIVATE_FIELDS
 };
 
-#if UV_HANDLE_BACKTRACE > 0
-#define UV_HANDLE_BACKTRACE_FIELD   void* backtrace[UV_HANDLE_BACKTRACE];
+#ifdef UV_HANDLE_BACKTRACE
+#define UV_HANDLE_BACKTRACE_FIELD   void* stack;
 #else
 #define UV_HANDLE_BACKTRACE_FIELD
 #endif

@@ -31,7 +31,7 @@
 static void uv__getnameinfo_work(struct uv__work* w) {
   uv_getnameinfo_t* req;
   int err;
-  socklen_t salen;
+  socklen_t salen = 0;
 
   req = container_of(w, uv_getnameinfo_t, work_req);
 

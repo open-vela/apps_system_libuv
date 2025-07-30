@@ -555,7 +555,7 @@ static int uv__udp_maybe_deferred_bind(uv_udp_t* handle,
                                        int domain,
                                        unsigned int flags) {
   union uv__sockaddr taddr;
-  socklen_t addrlen;
+  socklen_t addrlen = 0;
 
   if (handle->io_watcher.fd != -1)
     return 0;

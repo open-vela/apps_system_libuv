@@ -845,7 +845,7 @@ int uv_cond_timedwait(uv_cond_t* cond, uv_mutex_t* mutex, uint64_t timeout) {
 #endif
 }
 
-
+#if !defined(CONFIG_TLS_NELEM) || CONFIG_TLS_NELEM > 0
 int uv_key_create(uv_key_t* key) {
   return UV__ERR(pthread_key_create(key, NULL));
 }
@@ -866,3 +866,4 @@ void uv_key_set(uv_key_t* key, void* value) {
   if (pthread_setspecific(*key, value))
     assert(0);
 }
+#endif

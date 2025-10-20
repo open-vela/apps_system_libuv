@@ -580,7 +580,7 @@ static void uv__print_handles(uv_loop_t* loop, int only_active, FILE* stream) {
 #ifdef UV_HANDLE_BACKTRACE
     char tmp[BACKTRACE_BUFFER_SIZE(CONFIG_LIBC_BACKTRACE_DEPTH)] = "";
     FAR void **stack;
-    int stacksize;
+    int stacksize = 0;
 
     fprintf(stream, " backtrace:");
     stack = backtrace_get(h->stack, &stacksize);

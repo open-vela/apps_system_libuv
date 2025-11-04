@@ -608,3 +608,57 @@ void uv__process_close(uv_process_t* handle)
   DEBUGASSERT(0);
 }
 #endif
+
+#ifdef CONFIG_DISABLE_ENVIRON
+char *getenv(const char *name)
+{
+  return NULL;
+}
+
+int putenv(const char *string)
+{
+  return -1;
+}
+
+int setenv(const char *name, const char *value, int overwrite)
+{
+  return -1;
+}
+
+int unsetenv(const char *name)
+{
+  return -1;
+}
+
+int chdir(const char *path)
+{
+  return -1;
+}
+#endif
+
+#ifndef CONFIG_LIBC_LOCALE_GETTEXT
+char *textdomain(const char *domainname)
+{
+  return NULL;
+}
+
+char *gettext(const char *msgid)
+{
+  return NULL;
+}
+
+char *dgettext(const char *domainname, const char *msgid)
+{
+  return NULL;
+}
+
+char *bindtextdomain(const char *domainname, const char *dirname)
+{
+  return NULL;
+}
+
+char *bind_textdomain_codeset(const char *domainname, const char *codeset)
+{
+  return NULL;
+}
+#endif

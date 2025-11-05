@@ -584,9 +584,11 @@ static void uv__print_handles(uv_loop_t* loop, int only_active, FILE* stream) {
 
     fprintf(stream, " backtrace:");
     stack = backtrace_get(h->stack, &stacksize);
-    if (stacksize) {
+    if (stack) {
       backtrace_format(tmp, sizeof(tmp), stack, stacksize);
       fprintf(stream, " %s", tmp);
+    } else {
+      fprintf(stream, " <no backtrace available>");
     }
 #endif
     fprintf(stream, "\n");

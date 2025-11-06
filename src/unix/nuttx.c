@@ -123,7 +123,7 @@ int uv_cpu_info(uv_cpu_info_t** cpu_infos, int* count) {
   return 0;
 }
 
-#ifndef CONFIG_PSEUDOFS_SOFTLINKS
+#ifndef CONFIG_FS_LINKS
 int symlink(const char *path1, const char *path2)
 {
   return ERROR;

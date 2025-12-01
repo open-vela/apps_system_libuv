@@ -24,7 +24,7 @@
  */
 
 #include <nuttx/arch.h>
-#include <nuttx/tls.h>
+#include <nuttx/tls_task.h>
 
 #include "internal.h"
 #include "uv.h"

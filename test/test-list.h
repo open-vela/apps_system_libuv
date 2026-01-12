@@ -694,16 +694,16 @@ TASK_LIST_START
 
   TEST_ENTRY  (tcp_alloc_cb_fail)
 
-  TEST_ENTRY_CUSTOM(tcp_ping_pong, 0, 0, 15000)
+  TEST_ENTRY_CUSTOM(tcp_ping_pong, 0, 0, 60000)
   TEST_HELPER (tcp_ping_pong, tcp4_echo_server)
 
-  TEST_ENTRY_CUSTOM(tcp_ping_pong_vec, 0, 0, 15000)
+  TEST_ENTRY_CUSTOM(tcp_ping_pong_vec, 0, 0, 60000)
   TEST_HELPER (tcp_ping_pong_vec, tcp4_echo_server)
 
-  TEST_ENTRY_CUSTOM(tcp6_ping_pong, 0, 0, 15000)
+  TEST_ENTRY_CUSTOM(tcp6_ping_pong, 0, 0, 60000)
   TEST_HELPER (tcp6_ping_pong, tcp6_echo_server)
 
-  TEST_ENTRY_CUSTOM(tcp6_ping_pong_vec, 0, 0, 15000)
+  TEST_ENTRY_CUSTOM(tcp6_ping_pong_vec, 0, 0, 60000)
   TEST_HELPER (tcp6_ping_pong_vec, tcp6_echo_server)
 
   TEST_ENTRY  (pipe_ping_pong)

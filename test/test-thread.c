@@ -270,7 +270,11 @@ TEST_IMPL(thread_stack_size_explicit) {
                                   thread_check_stack, &options));
   ASSERT(0 == uv_thread_join(&thread));
 
+#if defined(__NuttX__)
+  options.stack_size = 2 * 1024 * 1024;  /* NuttX: 2MB max */
+#else
   options.stack_size = 8 * 1024 * 1024;  /* larger than most default os sizes */
+#endif
   ASSERT(0 == uv_thread_create_ex(&thread, &options,
                                   thread_check_stack, &options));
   ASSERT(0 == uv_thread_join(&thread));

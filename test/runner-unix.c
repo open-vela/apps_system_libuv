@@ -237,7 +237,8 @@ int process_wait(process_info_t* vec, int n, int timeout) {
   pthread_t tid;
   pthread_attr_t attr;
   unsigned int elapsed_ms;
-  struct timeval timebase;
+  struct timespec timebase;
+  struct timespec now;
   struct timeval tv;
   fd_set fds;
 
@@ -285,19 +286,20 @@ int process_wait(process_info_t* vec, int n, int timeout) {
     goto terminate;
   }
 
-  if (gettimeofday(&timebase, NULL))
+  if (clock_gettime(CLOCK_MONOTONIC, &timebase))
     abort();
 
-  tv = timebase;
+  now = timebase;
   for (;;) {
-    /* Check that gettimeofday() doesn't jump back in time. */
-    assert(tv.tv_sec > timebase.tv_sec ||
-           (tv.tv_sec == timebase.tv_sec && tv.tv_usec >= timebase.tv_usec));
+    /* Check that clock_gettime(CLOCK_MONOTONIC) doesn't jump back in time. */
+    assert(now.tv_sec > timebase.tv_sec ||
+           (now.tv_sec == timebase.tv_sec &&
+            now.tv_nsec >= timebase.tv_nsec));
 
     elapsed_ms =
-        (tv.tv_sec - timebase.tv_sec) * 1000 +
-        (tv.tv_usec / 1000) -
-        (timebase.tv_usec / 1000);
+        (now.tv_sec - timebase.tv_sec) * 1000 +
+        (now.tv_nsec / 1000000) -
+        (timebase.tv_nsec / 1000000);
 
     r = 0;  /* Timeout. */
     if (elapsed_ms >= (unsigned) timeout)
@@ -313,7 +315,7 @@ int process_wait(process_info_t* vec, int n, int timeout) {
     if (!(r == -1 && errno == EINTR))
       break;
 
-    if (gettimeofday(&tv, NULL))
+    if (clock_gettime(CLOCK_MONOTONIC, &now))
       abort();
   }
 
